@@ -5,5 +5,8 @@ urlpatterns = [
     path("", views.HomePageView.as_view(), name="home"), 
     path('login/',views.CustomLoginView.as_view(), name='login'),
     path('logout/',LogoutView.as_view(), name='logout'),
+    path("dashboard/student/", views.StudentDashboardView.as_view(), name="student-dashboard"),
+    path("dashboard/instructor/", views.InstructorDashboardView.as_view(), name="instructor-dashboard"),
+    path("dashboard/admin/", views.AdminDashboardView.as_view(), name="admin-dashboard"),
     
 ]
