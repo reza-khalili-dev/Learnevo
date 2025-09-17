@@ -10,7 +10,7 @@ from django.urls import reverse
 
 
 class CustomLoginView(LoginView):
-    template_name = 'registration/login.html'
+    template_name = 'users/login.html'
     
     def get_success_url(self):
         next_url = self.request.POST.get('next') or self.request.GET.get('next')        

@@ -18,13 +18,14 @@
             {% else %}
                 <li><a href="{% url 'login' %}">Login</a></li>
             {% endif %}
+            <li><a href="{% url 'home' %}">Home</a></li>
         </ul>
     </nav>
 
     <hr>
 
     {% block content %}
-    {% endblock %}
+    {% endblock content %}
 
 </body>
 </html>
