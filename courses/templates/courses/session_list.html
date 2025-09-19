@@ -1,0 +1,15 @@
+{% extends "users/base.html" %}
+{% block content %}
+<h2>Class sessions</h2>
+<ul>
+    {% for session in sessions %}
+        <li>
+            <a href="{% url 'session_detail' session.pk %}">{{ session.title }}</a>
+            ({{ session.date }} - {{ session.start_time }} To {{ session.end_time }})
+        </li>
+    {% empty %}
+        <li>No sessions have been recorded.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'session_create' classroom_id=view.kwargs.classroom_id %}">Add a new session</a>
+{% endblock %}

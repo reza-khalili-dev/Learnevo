@@ -12,4 +12,9 @@ urlpatterns = [
     path('classes/<int:pk>/', views.ClassDetailView.as_view(), name='class_detail'),
     path('classes/<int:pk>/update/', views.ClassUpdateView.as_view(), name='class_update'),
     path('classes/<int:pk>/delete/', views.ClassDeleteView.as_view(), name='class_delete'),
+    path("classroom/<int:classroom_id>/sessions/", views.SessionListView.as_view(), name="session_list"),
+    path("sessions/<int:pk>/", views.SessionDetailView.as_view(), name="session_detail"),
+    path("classroom/<int:classroom_id>/sessions/create/", views.SessionCreateView.as_view(), name="session_create"),
+    path("sessions/<int:pk>/update/", views.SessionUpdateView.as_view(), name="session_update"),
+    path("sessions/<int:pk>/delete/", views.SessionDeleteView.as_view(), name="session_delete")
 ]

@@ -2,10 +2,14 @@ from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin , UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from .models import Course , Class
+from .models import Course , Classroom , Session
+from .forms import SessionForm
+
 
 
 # Create your views here.
+
+# Course views
 
 class CourseListView(LoginRequiredMixin, ListView):
     model = Course
@@ -47,18 +51,21 @@ class CourseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         course = self.get.object()
         return self.request.user == course.instructor
 
+
+# Classroom views
+
 class ClassListView(LoginRequiredMixin, ListView):
-    model = Class
+    model = Classroom
     template_name = 'courses/class_list.html'
     context_object_name = 'classes'
 
 class ClassDetailView(LoginRequiredMixin, DetailView):
-    model = Class
+    model = Classroom
     template_name = 'courses/class_detail.html'
     context_object_name = 'class_obj'
 
 class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    model = Class
+    model = Classroom
     fields = ['course', 'title', 'start_date', 'end_date', 'capacity']
     template_name = 'courses/class_form.html'
 
@@ -80,7 +87,7 @@ class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return super().form_valid(form)
     
 class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Class
+    model = Classroom
     fields = ['title', 'start_date', 'end_date', 'capacity']
     template_name = 'courses/class_form.html'
 
@@ -89,10 +96,63 @@ class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user == class_obj.course.instructor
 
 class ClassDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Class
+    model = Classroom
     template_name = 'courses/class_confirm_delete.html'
     success_url = reverse_lazy('class_list')
 
     def test_func(self):
         class_obj = self.get_object()
         return self.request.user == class_obj.course.instructor
+    
+
+# Session views
+
+class SessionListView(LoginRequiredMixin, ListView):
+    model = Session
+    template_name = 'courses/session_list.html'
+    context_object_name = 'sessions'
+    
+    def get_queryset(self):
+        classroom_id = self.kwargs["classroom_id"]
+        return Session.objects.filter(classroom_id=classroom_id)
+    
+
+class SessionDetailView(LoginRequiredMixin, DetailView):
+    model = Session
+    template_name = 'courses/session_detail.html'
+    context_object_name = 'session'
+    
+class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Session
+    form_class = SessionForm
+    template_name = 'courses/session_form.html'
+
+    def form_valid(self, form):
+        form
+        classroom = Classroom.objects.get(id=self.kwargs["classroom_id"])
+        form.instance.classroom = classroom
+        return super().form_valid(form)
+    
+    def test_func(self):
+        classroom = Classroom.objects.get(id=self.kwargs["classroom_id"])
+        return self.request.user == classroom.course.instructor
+
+class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Session
+    form_class = SessionForm
+    template_name = "courses/session_form.html"
+
+    def test_func(self):
+        session = self.get_object()
+        return self.request.user == session.classroom.course.instructor
+
+class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Session
+    template_name = "courses/session_confirm_delete.html"
+
+    def get_success_url(self):
+        return reverse_lazy("session_list", kwargs={"classroom_id": self.object.classroom.id})
+
+    def test_func(self):
+        session = self.get_object()
+        return self.request.user == session.classroom.course.instructor
