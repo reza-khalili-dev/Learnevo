@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.forms import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
@@ -34,23 +35,32 @@ class Classroom(models.Model):
     def __str__(self):
         return f"{self.course.title} — {self.title}"
 
-class Session(models.Model):
-    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='sessions')
 
+
+class Session(models.Model):
+    classroom = models.ForeignKey("Classroom",on_delete=models.CASCADE,related_name="sessions")
+    
     title = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
+
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return f"{self.classroom.title} — {self.title}"
-    
+
     def clean(self):
         if self.end_time <= self.start_time:
-            raise ValidationError("The end time must be after the start time.")
-    
+            raise ValidationError(_("End time must be after start time."))
+
+        overlapping_sessions = Session.objects.filter(classroom=self.classroom).exclude(pk=self.pk)
+
+        for session in overlapping_sessions:
+            if (self.start_time < session.end_time) and (self.end_time > session.start_time):
+                raise ValidationError(_(f"Session overlaps with another session: {session.title} "f"({session.start_time} - {session.end_time})"))
+
     class Meta:
-        ordering = ["date", "start_time"]
+        ordering = ["start_time"]
+
+    def __str__(self):
+        return f"{self.classroom.title} — {self.title}"
