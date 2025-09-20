@@ -5,7 +5,7 @@ from .models import Session
 class SessionForm(forms.ModelForm):
     class Meta:
         model = Session
-        fields = ["title", "date", "start_time", "end_time"]
+        fields = ["title", "description", "start_time", "end_time"]
 
     def clean(self):
         cleaned_data = super().clean()
