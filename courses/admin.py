@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course , Classroom , Session
+from .models import Course , Classroom , Session , Attendance
 
 
 # Register your models here.
@@ -21,3 +21,10 @@ class SessionAdmin(admin.ModelAdmin):
     list_display = ('title', 'classroom', 'start_time', 'end_time')
     list_filter = ('classroom', 'start_time')
     search_fields = ('title', 'description')
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display = ("session", "student", "status", "marked_by", "marked_at")
+    list_filter = ("status", "session__classroom__course")
+    search_fields = ("student__first_name", "student__last_name", "student__email", "session__title")
+    readonly_fields = ("marked_at",)

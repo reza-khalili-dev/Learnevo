@@ -16,5 +16,12 @@ urlpatterns = [
     path("sessions/<int:pk>/", views.SessionDetailView.as_view(), name="session_detail"),
     path("classroom/<int:classroom_id>/sessions/create/", views.SessionCreateView.as_view(), name="session_create"),
     path("sessions/<int:pk>/update/", views.SessionUpdateView.as_view(), name="session_update"),
-    path("sessions/<int:pk>/delete/", views.SessionDeleteView.as_view(), name="session_delete")
+    path("sessions/<int:pk>/delete/", views.SessionDeleteView.as_view(), name="session_delete"),
+    path('sessions/<int:session_pk>/attendance/', views.AttendanceListView.as_view(), name='attendance_list'),
+    path('sessions/<int:session_pk>/attendance/create/<int:student_pk>/', views.AttendanceCreateView.as_view(), name='attendance_create'),
+    path('attendance/<int:pk>/update/', views.AttendanceUpdateView.as_view(), name='attendance_update'),
+    path('attendance/<int:pk>/delete/', views.AttendanceDeleteView.as_view(), name='attendance_delete'),
 ]
+
+
+

@@ -64,3 +64,41 @@ class Session(models.Model):
 
     def __str__(self):
         return f"{self.classroom.title} — {self.title}"
+
+
+class Attendance(models.Model):
+    
+    STATUS_PRESENT = "present"
+    STATUS_ABSENT  = "absent"
+    STATUS_LATE    = "late"
+    STATUS_EXCUSED = "excused"
+    
+    STATUS_CHOICES = [
+        (STATUS_PRESENT, "Present"),
+        (STATUS_ABSENT,  "Absent"),
+        (STATUS_LATE,    "Late"),
+        (STATUS_EXCUSED, "Excused"),
+    ]
+
+    session = models.ForeignKey("Session",on_delete=models.CASCADE,related_name="attendances")
+    student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="attendances")
+    status = models.CharField(max_length=10,choices=STATUS_CHOICES,default=STATUS_ABSENT)
+    marked_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name="marked_attendances")
+
+    marked_at = models.DateTimeField(auto_now=True)
+    note  = models.TextField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('session','student')
+        ordering = ["student__last_name", "student__first_name"]
+    
+    def __str__(self):
+        return f"{self.student} — {self.session} — {self.status}"
+    
+    def clean(self):
+        if getattr(self.student, 'role', None) != 'student':
+            raise ValidationError(_('Selected user is not a student.'))
+        
+        classroom = self.session.classroom
+        if not classroom.students.filter(pk=self.student.pk).exists():
+            raise ValidationError(_('Student is not enrolled in this classroom.'))

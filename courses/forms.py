@@ -1,5 +1,5 @@
 from django import forms
-from .models import Session
+from .models import Session, Attendance
 
 
 class SessionForm(forms.ModelForm):
@@ -16,3 +16,12 @@ class SessionForm(forms.ModelForm):
             raise forms.ValidationError("The end time must be after the start time.")
 
         return cleaned_data
+
+class AttendanceForm(forms.ModelForm):
+    class Meta:
+        model = Attendance
+        fields = ["status", "note"]
+
+    def clean(self):
+        cleaned =  super().clean()
+        return cleaned

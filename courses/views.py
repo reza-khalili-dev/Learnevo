@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.mixins import LoginRequiredMixin , UserPassesTestMixin
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from .models import Course , Classroom , Session
-from .forms import SessionForm
+from config import settings
+from .models import Course, Classroom, Session, Attendance
+from .forms import SessionForm, AttendanceForm
 
 
 
@@ -156,3 +157,84 @@ class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         session = self.get_object()
         return self.request.user == session.classroom.course.instructor
+    
+class AttendanceListView(LoginRequiredMixin, ListView):
+    model = Attendance
+    template_name = "courses/attendance_list.html"
+    context_object_name = "attendances"
+
+    def get_queryset(self):
+        session_pk = self.kwargs.get("session_pk")
+        qs = Attendance.objects.filter(session_id=session_pk).select_related("student", "marked_by")
+        if getattr(self.request.user, "role", None) == "Student":
+            qs = qs.filter(student=self.request.user)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["session"] = get_object_or_404(Session, pk=self.kwargs.get("session_pk"))
+        ctx["enrolled_students"] = ctx["session"].classroom.students.all()
+        return ctx
+    
+# Attendance Views
+class AttendanceCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Attendance
+    form_class = AttendanceForm
+    template_name = "courses/attendance_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.session = get_object_or_404(Session, pk=kwargs.get("session_pk"))
+        self.student = get_object_or_404(settings.AUTH_USER_MODEL, pk=kwargs.get("student_pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def test_func(self):
+        user = self.request.user
+        if getattr(user, "role", None) in ("manager", "employee"):
+            return True
+        return user == self.session.classroom.course.instructor
+
+    def form_valid(self, form):
+        form.instance.session = self.session
+        form.instance.student = self.student
+        form.instance.marked_by = self.request.user
+        form.instance.full_clean()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("attendance_list", kwargs={"session_pk": self.session.pk})
+
+
+class AttendanceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Attendance
+    form_class = AttendanceForm
+    template_name = "courses/attendance_form.html"
+
+    def test_func(self):
+        attendance = self.get_object()
+        user = self.request.user
+        if getattr(user, "role", None) in ("manager", "employee"):
+            return True
+        return user == attendance.session.classroom.course.instructor
+
+    def form_valid(self, form):
+        form.instance.marked_by = self.request.user
+        form.instance.full_clean()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("attendance_list", kwargs={"session_pk": self.object.session.pk})
+
+
+class AttendanceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Attendance
+    template_name = "courses/attendance_confirm_delete.html"
+
+    def test_func(self):
+        attendance = self.get_object()
+        user = self.request.user
+        if getattr(user, "role", None) in ("manager", "employee"):
+            return True
+        return user == attendance.session.classroom.course.instructor
+
+    def get_success_url(self):
+        return reverse_lazy("attendance_list", kwargs={"session_pk": self.object.session.pk})
