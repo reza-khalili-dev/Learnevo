@@ -1,0 +1,21 @@
+{% extends "users/base.html" %}
+{% block content %}
+  <h2>{{ assignment.title }}</h2>
+  <p>{{ assignment.description }}</p>
+  {% if assignment.attachment %}
+    <p>Attachment: <a href="{{ assignment.attachment.url }}">{{ assignment.attachment.name }}</a></p>
+  {% endif %}
+  <p>Due: {{ assignment.due_date }}</p>
+  <p>Max score: {{ assignment.max_score }}</p>
+
+  {% if user.role == 'Student' %}
+    <a href="{% url 'submission_create' assignment_pk=assignment.pk %}">Submit</a>
+    {% for s in assignment.submissions.filter(student=user) %}
+      <p>Your submission: {{ s.submitted_at }} — Grade: {{ s.grade }}</p>
+    {% endfor %}
+  {% endif %}
+
+  {% if user == assignment.course.instructor %}
+    <a href="{% url 'submission_list' assignment_pk=assignment.pk %}">View Submissions</a>
+  {% endif %}
+{% endblock %}

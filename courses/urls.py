@@ -21,6 +21,14 @@ urlpatterns = [
     path('sessions/<int:session_pk>/attendance/create/<int:student_pk>/', views.AttendanceCreateView.as_view(), name='attendance_create'),
     path('attendance/<int:pk>/update/', views.AttendanceUpdateView.as_view(), name='attendance_update'),
     path('attendance/<int:pk>/delete/', views.AttendanceDeleteView.as_view(), name='attendance_delete'),
+    path("courses/<int:course_pk>/assignments/", views.AssignmentListView.as_view(), name="assignment_list"),
+    path("assignments/<int:pk>/", views.AssignmentDetailView.as_view(), name="assignment_detail"),
+    path("courses/<int:course_pk>/assignments/create/", views.AssignmentCreateView.as_view(), name="assignment_create"),
+    path("assignments/<int:pk>/update/", views.AssignmentUpdateView.as_view(), name="assignment_update"),
+    path("assignments/<int:pk>/delete/", views.AssignmentDeleteView.as_view(), name="assignment_delete"),
+    path("assignments/<int:assignment_pk>/submissions/", views.SubmissionListView.as_view(), name="submission_list"),
+    path("assignments/<int:assignment_pk>/submit/", views.SubmissionCreateView.as_view(), name="submission_create"),
+    path("submissions/<int:pk>/", views.SubmissionUpdateView.as_view(), name="submission_update"),
 ]
 
 

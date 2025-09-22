@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course , Classroom , Session , Attendance
+from .models import Course , Classroom , Session , Attendance, Assignment, Submission
 
 
 # Register your models here.
@@ -28,3 +28,18 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_filter = ("status", "session__classroom__course")
     search_fields = ("student__first_name", "student__last_name", "student__email", "session__title")
     readonly_fields = ("marked_at",)
+    
+
+@admin.register(Assignment)
+class AssignmentAdmin(admin.ModelAdmin):
+    list_display = ("title", "course", "session", "due_date", "max_score", "is_published")
+    list_filter = ("course", "is_published")
+    search_fields = ("title", "description")
+    raw_id_fields = ("course", "session") 
+
+@admin.register(Submission)
+class SubmissionAdmin(admin.ModelAdmin):
+    list_display = ("assignment", "student", "submitted_at", "grade", "graded_by")
+    list_filter = ("assignment__course",)
+    search_fields = ("student__email", "student__first_name", "student__last_name", "assignment__title")
+    readonly_fields = ("submitted_at", "graded_at")

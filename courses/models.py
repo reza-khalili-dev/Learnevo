@@ -2,8 +2,13 @@ from django.db import models
 from django.conf import settings
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
-
+import os
+from django.utils import timezone
 # Create your models here.
+
+# Dinamic upload func
+def submission_upload_to(instance, filename):
+    return os.path.join("assignments",str(instance.assignment.id),str(instance.student.id),filename)
 
 
 class Course(models.Model):
@@ -102,3 +107,64 @@ class Attendance(models.Model):
         classroom = self.session.classroom
         if not classroom.students.filter(pk=self.student.pk).exists():
             raise ValidationError(_('Student is not enrolled in this classroom.'))
+
+# Assignment Model
+class Assignment(models.Model):
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='assignments')
+    session = models.ForeignKey(Session, on_delete=models.SET_NULL, null=True, blank=True, related_name="assignments")
+        
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    attachment = models.FileField(upload_to="assignments/attachments/", null=True, blank=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    max_score = models.PositiveIntegerField(default=100)
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.course.title} — {self.title}"
+    
+    def clean(self):
+        if self.due_date and self.created_at and self.due_date <= self.created_at:
+            raise ValidationError(_("Due date must be after creation date."))
+        
+        
+# Submission Model
+class Submission(models.Model):
+    
+    assignment = models.ForeignKey(Assignment,on_delete=models.CASCADE,related_name="submissions")
+    student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="submissions")
+    
+    content = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to=submission_upload_to, null=True, blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    grade = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    
+    graded_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name="graded_submissions")
+    graded_at = models.DateTimeField(null=True, blank=True)
+    feedback = models.TextField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("assignment", "student")
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return f"Submission {self.assignment.title} by {self.student}"
+    
+    def clean(self):
+        course = self.assignment.course
+        classrooms = course.classes.all()
+        enrolled = False
+        for cl in classrooms:
+            if cl.students.filter(pk=self.student.pk).exists():
+                enrolled = True
+                break
+        if not enrolled:
+            raise ValidationError(_("Student is not enrolled in any classroom of this course."))
+
+        if self.assignment.due_date and self.submitted_at:
+            if timezone.now() > self.assignment.due_date:
+                raise ValidationError(_("The deadline for this assignment has passed."))
+
+    

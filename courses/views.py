@@ -1,10 +1,11 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin , UserPassesTestMixin
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from config import settings
-from .models import Course, Classroom, Session, Attendance
-from .forms import SessionForm, AttendanceForm
+from django.utils import timezone 
+from .models import Course, Classroom, Session, Attendance, Assignment, Submission
+from .forms import SessionForm, AttendanceForm, AssignmentForm, SubmissionForm
 
 
 
@@ -238,3 +239,144 @@ class AttendanceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def get_success_url(self):
         return reverse_lazy("attendance_list", kwargs={"session_pk": self.object.session.pk})
+
+
+# Assignment views
+class AssignmentListView(LoginRequiredMixin, ListView):
+    model = Assignment 
+    template_name = "courses/assignment_list.html" 
+    context_object_name = "assignments"  
+
+    def get_queryset(self):
+        course_pk = self.kwargs.get("course_pk")
+        qs = Assignment.objects.filter(course__pk=course_pk, is_published=True).order_by("-created_at")
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["course"] = get_object_or_404(Course, pk=self.kwargs.get("course_pk"))
+        return ctx
+
+class AssignmentDetailView(LoginRequiredMixin, DetailView):
+    model = Assignment
+    template_name = "courses/assignment_detail.html"
+    context_object_name = "assignment"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        assignment = self.get_object()
+        user = self.request.user
+        if user == assignment.course.instructor or getattr(user, "role", None) in ("manager", "employee"):
+            ctx["submissions"] = assignment.submissions.select_related("student").all()
+        else:
+            ctx["submissions"] = assignment.submissions.filter(student=user)
+        return ctx
+
+class AssignmentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Assignment
+    form_class = AssignmentForm
+    template_name = "courses/assignment_form.html"
+
+    def form_valid(self, form):
+        course = get_object_or_404(Course, pk=self.kwargs.get("course_pk"))
+        form.instance.course = course
+        return super().form_valid(form)
+
+    def test_func(self):
+        course = get_object_or_404(Course, pk=self.kwargs.get("course_pk"))
+        return self.request.user == course.instructor
+
+    def get_success_url(self):
+        return reverse("assignment_detail", kwargs={"pk": self.object.pk})
+
+class AssignmentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Assignment
+    form_class = AssignmentForm
+    template_name = "courses/assignment_form.html"
+
+    def test_func(self):
+        assignment = self.get_object()
+        return self.request.user == assignment.course.instructor
+
+    def get_success_url(self):
+        return reverse("assignment_detail", kwargs={"pk": self.object.pk})
+
+class AssignmentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Assignment
+    template_name = "courses/assignment_confirm_delete.html"
+
+    def test_func(self):
+        assignment = self.get_object()
+        return self.request.user == assignment.course.instructor
+
+    def get_success_url(self):
+        return reverse_lazy("assignment_list", kwargs={"course_pk": self.object.course.pk})
+
+
+# Submission views
+class SubmissionCreateView(LoginRequiredMixin, CreateView):
+    model = Submission
+    form_class = SubmissionForm
+    template_name = "courses/submission_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.assignment = get_object_or_404(Assignment, pk=kwargs.get("assignment_pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def test_func(self):
+        user = self.request.user
+        if getattr(user, "role", None) != "Student":
+            return False
+        classrooms = self.assignment.course.classes.all()
+        enrolled = any(cl.students.filter(pk=user.pk).exists() for cl in classrooms)
+        return enrolled
+
+    def form_valid(self, form):
+        if self.assignment.due_date and timezone.now() > self.assignment.due_date:
+            form.add_error(None, "Deadline has passed. You cannot submit.")
+            return self.form_invalid(form)
+
+        form.instance.assignment = self.assignment
+        form.instance.student = self.request.user
+        form.instance.full_clean()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("assignment_detail", kwargs={"pk": self.assignment.pk})
+
+class SubmissionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Submission
+    form_class = SubmissionForm
+    template_name = "courses/submission_form.html"
+
+    def test_func(self):
+        submission = self.get_object()
+        user = self.request.user
+        if getattr(user, "role", None) in ("manager", "employee"):
+            return True
+        if user == submission.student:
+            if submission.assignment.due_date and timezone.now() > submission.assignment.due_date:
+                return False
+            return True
+        return user == submission.assignment.course.instructor
+
+    def form_valid(self, form):
+        form.instance.full_clean()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("assignment_detail", kwargs={"pk": self.object.assignment.pk})
+
+class SubmissionListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Submission
+    template_name = "courses/submission_list.html"
+    context_object_name = "submissions"
+
+    def test_func(self):
+        assignment = get_object_or_404(Assignment, pk=self.kwargs.get("assignment_pk"))
+        user = self.request.user
+        return user == assignment.course.instructor or getattr(user, "role", None) in ("manager", "employee")
+
+    def get_queryset(self):
+        return Submission.objects.filter(assignment__pk=self.kwargs.get("assignment_pk")).select_related("student").order_by("-submitted_at")
+

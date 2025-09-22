@@ -1,5 +1,6 @@
 from django import forms
-from .models import Session, Attendance
+from .models import Session, Attendance, Assignment, Submission
+from django.utils import timezone
 
 
 class SessionForm(forms.ModelForm):
@@ -24,4 +25,29 @@ class AttendanceForm(forms.ModelForm):
 
     def clean(self):
         cleaned =  super().clean()
+        return cleaned
+    
+
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = ["title", "description", "attachment", "due_date", "max_score", "is_published", "session"]
+
+    def clean_due_date(self):
+        due = self.cleaned_data.get("due_date")
+        if due and due <= timezone.now():
+            raise forms.ValidationError("Due date must be in the future.")
+        return due
+
+class SubmissionForm(forms.ModelForm):
+    class Meta:
+        model = Submission
+        fields = ["content", "file"]
+
+    def clean(self):
+        cleaned = super().clean()
+        content = cleaned.get("content")
+        file = cleaned.get("file")
+        if not content and not file:
+            raise forms.ValidationError("You must provide either text content or a file.")
         return cleaned

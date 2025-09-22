@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Submissions for "{{ assignment.title }}"</h2>
+  <ul class="list-group">
+    {% for submission in submissions %}
+      <li class="list-group-item">
+        <strong>{{ submission.student.get_full_name }}</strong> 
+        - Submitted at {{ submission.submitted_at }}
+        {% if submission.file %}
+          - <a href="{{ submission.file.url }}">Download</a>
+        {% endif %}
+        {% if submission.grade %}
+          <span class="badge bg-info">Grade: {{ submission.grade }}</span>
+        {% else %}
+          <span class="badge bg-warning">Not graded</span>
+        {% endif %}
+        <a href="{% url 'submission_update' submission.id %}" class="btn btn-sm btn-primary">Edit</a>
+        <a href="{% url 'submission_delete' submission.id %}" class="btn btn-sm btn-danger">Delete</a>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No submissions yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
