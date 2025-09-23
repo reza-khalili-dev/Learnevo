@@ -1,14 +1,17 @@
 from django.contrib import admin
 from .models import Course , Classroom , Session , Attendance, Assignment, Submission
+from users.models import CustomUser
 
 
 # Register your models here.
 
-@admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ("title", "instructor", "created_at", "updated_at")
-    search_fields = ("title", "description")
-    list_filter = ("created_at", "instructor")
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "instructor":
+            kwargs["queryset"] = CustomUser.objects.filter(role="instructor")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+admin.site.register(Course, CourseAdmin)
 
 @admin.register(Classroom)
 class ClassAdmin(admin.ModelAdmin):
@@ -16,11 +19,15 @@ class ClassAdmin(admin.ModelAdmin):
     list_filter = ('course', 'start_date')
     search_fields = ('title', 'course__title')
 
-@admin.register(Session)
+
+
 class SessionAdmin(admin.ModelAdmin):
-    list_display = ('title', 'classroom', 'start_time', 'end_time')
-    list_filter = ('classroom', 'start_time')
-    search_fields = ('title', 'description')
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "students":
+            kwargs["queryset"] = CustomUser.objects.filter(role="student")
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+admin.site.register(Session, SessionAdmin)
 
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
