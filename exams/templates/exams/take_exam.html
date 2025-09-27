@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>{{ exam.title }}</h2>
+<p>{{ exam.description }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    {% for question in questions %}
+        <div style="margin-bottom: 20px;">
+            <p><strong>{{ forloop.counter }}. {{ question.text }}</strong> ({{ question.points }} points)</p>
+            {% for choice in question.choices.all %}
+                <label>
+                    <input type="radio" name="{{ question.id }}" value="{{ choice.id }}">
+                    {{ choice.text }}
+                </label><br>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <button type="submit">Submit Exam</button>
+</form>
+
+{% endblock %}
