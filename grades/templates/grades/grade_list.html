@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Grades</h2>
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Student</th>
+        <th>Assignment</th>
+        <th>Exam</th>
+        <th>Score</th>
+        <th>Max Score</th>
+        <th>Actions</th>
+    </tr>
+    {% for grade in grades %}
+    <tr>
+        <td>{{ grade.student.email }}</td>
+        <td>{{ grade.assignment }}</td>
+        <td>{{ grade.exam }}</td>
+        <td>{{ grade.score }}</td>
+        <td>{{ grade.max_score }}</td>
+        <td>
+            <a href="{% url 'grades:grade_detail' grade.pk %}">View</a> |
+            <a href="{% url 'grades:grade_update' grade.pk %}">Edit</a> |
+            <a href="{% url 'grades:grade_delete' grade.pk %}">Delete</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">No grades found.</td></tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'grades:grade_create' %}">+ Add New Grade</a>
+{% endblock %}

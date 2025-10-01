@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Grade Detail</h2>
+
+<p><strong>Student:</strong> {{ grade.student.email }}</p>
+<p><strong>Assignment:</strong> {{ grade.assignment }}</p>
+<p><strong>Exam:</strong> {{ grade.exam }}</p>
+<p><strong>Score:</strong> {{ grade.score }}</p>
+<p><strong>Max Score:</strong> {{ grade.max_score }}</p>
+
+<a href="{% url 'grades:grade_update' grade.pk %}">Edit</a> |
+<a href="{% url 'grades:grade_delete' grade.pk %}">Delete</a> |
+<a href="{% url 'grades:grade_list' %}">Back to List</a>
+{% endblock %}
