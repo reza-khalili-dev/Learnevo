@@ -1,0 +1,21 @@
+{% extends "users/base.html" %}
+{% block content %}
+<h1>Book List</h1>
+
+<ul>
+    {% for book in books %}
+        <li>
+            <a href="{% url 'books:book-detail' book.pk %}">{{ book.title }}</a> 
+            - {{ book.author }}
+            - ${{ book.price }}
+            {% if book.is_physical %}(Physical){% endif %}
+            {% if book.is_digital %}(Digital){% endif %}
+        </li>
+    {% empty %}
+        <li>No books available.</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'books:book-add' %}">Add New Book</a>
+
+{% endblock %}

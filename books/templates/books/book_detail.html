@@ -1,0 +1,15 @@
+{% extends "users/base.html" %}
+{% block content %}
+<h1>{{ book.title }}</h1>
+<p>Author: {{ book.author }}</p>
+<p>Price: ${{ book.price }}</p>
+
+<p>Type: 
+    {% if book.is_digital %}Digital{% endif %}
+    {% if book.is_physical %}Physical{% endif %}
+</p>
+
+<a href="{% url 'books:book-edit' book.pk %}">Edit</a>
+<a href="{% url 'books:book-delete' book.pk %}">Delete</a>
+
+{% endblock %}
