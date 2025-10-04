@@ -23,6 +23,6 @@ urlpatterns = [
     path('courses/',include('courses.urls')),
     path('exams/',include('exams.urls')),
     path("grades/", include("grades.urls")),
-    
+    path("books/", include("books.urls")),
 
 ]
