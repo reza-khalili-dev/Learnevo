@@ -1,15 +1,20 @@
-{% extends "users/base.html" %}
+{% extends "base.html" %}
+
 {% block content %}
-<h1>{{ book.title }}</h1>
-<p>Author: {{ book.author }}</p>
-<p>Price: ${{ book.price }}</p>
+  <div class="container mt-4">
+    <h2>{{ book.title }}</h2>
+    <p><strong>Author:</strong> {{ book.author }}</p>
+    <p><strong>Description:</strong> {{ book.description }}</p>
+    <p><strong>Price:</strong> ${{ book.price }}</p>
 
-<p>Type: 
-    {% if book.is_digital %}Digital{% endif %}
-    {% if book.is_physical %}Physical{% endif %}
-</p>
-
-<a href="{% url 'books:book-edit' book.pk %}">Edit</a>
-<a href="{% url 'books:book-delete' book.pk %}">Delete</a>
-
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'orders:order_create' %}">
+        {% csrf_token %}
+        <input type="hidden" name="book_id" value="{{ book.id }}">
+        <button type="submit" class="btn btn-primary">Buy Now</button>
+      </form>
+    {% else %}
+      <p class="text-muted">Please <a href="{% url 'login' %}">log in</a> to purchase this book.</p>
+    {% endif %}
+  </div>
 {% endblock %}

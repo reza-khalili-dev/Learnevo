@@ -24,5 +24,6 @@ urlpatterns = [
     path('exams/',include('exams.urls')),
     path("grades/", include("grades.urls")),
     path("books/", include("books.urls")),
+    path("orders/", include("orders.urls")),
 
 ]
