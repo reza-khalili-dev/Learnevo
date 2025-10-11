@@ -1,39 +1,41 @@
-{% extends 'base.html' %}
-{% block title %}Order Details{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}Order Detail{% endblock %}
 {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-4">Order #{{ order.id }}</h2>
+<div class="container mt-5">
+    <h2 class="mb-4">Order #{{ order.id }}</h2>
 
-  <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-  <p><strong>Total:</strong> ${{ order.total }}</p>
-  <p><strong>Transaction ID:</strong> {{ order.transaction_id }}</p>
-  <p><strong>Created at:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+    <div class="card mb-4">
+        <div class="card-body">
+            <p><strong>Status:</strong> 
+                {% if order.status == "paid" %}
+                    <span class="badge bg-success">Paid ✅</span>
+                {% elif order.status == "pending" %}
+                    <span class="badge bg-warning text-dark">Pending ⏳</span>
+                {% else %}
+                    <span class="badge bg-secondary">Cancelled ❌</span>
+                {% endif %}
+            </p>
+            <p><strong>Total:</strong> ${{ order.total }}</p>
+            <p><strong>Transaction ID:</strong> {{ order.transaction_id|default:"—" }}</p>
+        </div>
+    </div>
 
-  <hr>
+    <h4>Items</h4>
+    <ul class="list-group mb-4">
+        {% for item in order.items.all %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ item.book.title }}
+                <span>${{ item.price }}</span>
+            </li>
+        {% endfor %}
+    </ul>
 
-  <h4>Items</h4>
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Book</th>
-        <th>Quantity</th>
-        <th>Unit Price</th>
-        <th>Subtotal</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in order.items.all %}
-        <tr>
-          <td>{{ item.book.title }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>${{ item.unit_price }}</td>
-          <td>${{ item.subtotal }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    {% if order.status != "paid" %}
+    <a href="{% url 'orders:payment' order.id %}" class="btn btn-primary">
+        💳 Pay Now
+    </a>
+    {% endif %}
 
-  <a href="{% url 'orders:order_list' %}" class="btn btn-secondary mt-3">Back to Orders</a>
+    <a href="{% url 'orders:order_list' %}" class="btn btn-secondary">Back to Orders</a>
 </div>
 {% endblock %}

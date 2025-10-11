@@ -1,7 +1,9 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% block title %}Payment Success{% endblock %}
 {% block content %}
-  <h2>Payment Successful</h2>
-  <p>Order #{{ order.id }} has been paid.</p>
-  <p>Transaction ID: {{ order.transaction_id }}</p>
-  <a href="{% url 'orders:order_detail' order.id %}">View Order</a>
+<div class="container mt-5 text-center">
+    <h2 class="text-success">✅ Payment Successful!</h2>
+    <p>Your order has been confirmed and payment received.</p>
+    <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-outline-primary mt-3">View Invoice / Receipt</a>
+</div>
 {% endblock %}
