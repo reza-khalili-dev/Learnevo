@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Payment Canceled</h2>
+  <p>Payment for Order #{{ order.id }} was canceled. Status: {{ order.status }}</p>
+  <a href="{% url 'orders:order_detail' order.id %}">Back to Order</a>
+{% endblock %}
