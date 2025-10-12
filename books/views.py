@@ -15,22 +15,22 @@ from .models import Book
 
 class BookListView(ListView):
     model = Book
-    template_name = 'materials/book_list.html'
+    template_name = 'books/book_list.html'
     context_object_name = 'books'
     
 class BookDetailView(DetailView):
     model = Book
-    template_name = 'materials/book_detail.html'
+    template_name = 'books/book_detail.html'
     context_object_name = 'book'
 
 class BookCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Book
-    template_name = 'materials/book_form.html'
+    template_name = 'books/book_form.html'
     fields = [
         "title", "author", "description", "book_type",
         "price", "file", "external_link", "stock", "shipping_available"
     ]
-    success_url = reverse_lazy('materials:book-list')
+    success_url = reverse_lazy('books:book_list')
 
     def test_func(self):
         return self.request.user.role in ["manager", "employee"]
@@ -38,12 +38,12 @@ class BookCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 class BookUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Book
-    template_name = 'materials/book_form.html'
+    template_name = 'books/book_form.html'
     fields = [
         "title", "author", "description", "book_type",
         "price", "file", "external_link", "stock", "shipping_available"
     ]
-    success_url = reverse_lazy('materials:book-list')
+    success_url = reverse_lazy('books:book_list')
 
     def test_func(self):
         return self.request.user.role in ["manager", "employee"]
@@ -51,8 +51,8 @@ class BookUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
 class BookDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Book
-    template_name = 'materials/book_confirm_delete.html'
-    success_url = reverse_lazy('materials:book-list')
+    template_name = 'books/book_confirm_delete.html'
+    success_url = reverse_lazy('books:book_list')
 
     def test_func(self):
         return self.request.user.role in ["manager", "employee"]
