@@ -4,6 +4,6 @@
   <p>{{ course.description }}</p>
   <p>Instructor: {{ course.instructor }}</p>
 
-  <a href="{% url 'course_update' course.pk %}">Edit</a> |
-  <a href="{% url 'course_delete' course.pk %}">Delete</a>
+  <a href="{% url 'courses:course_update' course.pk %}">Edit</a> |
+  <a href="{% url 'courses:course_delete' course.pk %}">Delete</a>
 {% endblock %}

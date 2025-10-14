@@ -33,7 +33,7 @@ class CourseCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return super().form_valid(form)
     
     def test_func(self):
-        return self.request.user.role == 'Instructor'
+        return self.request.user.role in ["manager", "employee"]
 
 class CourseUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Course
@@ -41,17 +41,23 @@ class CourseUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'courses/course_form.html'
 
     def test_func(self):
-        course = self.get.object()
-        return self.request.user == course.instructor
+        course = self.get_object()
+        return (self.request.user.role in ["manager", "employee"] or self.request.user == course.instructor)
+
+    def get_success_url(self):
+        return reverse('courses:course_detail', kwargs={'pk': self.object.pk})
 
 class CourseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Course
     template_name = 'courses/course_confirm_delete.html'
-    success_url = reverse_lazy('course_list')
+    success_url = reverse_lazy('courses:course_list')
 
     def test_func(self):
-        course = self.get.object()
-        return self.request.user == course.instructor
+        course = self.get_object()
+        return (
+            self.request.user.role in ["manager", "employee"]
+            or self.request.user == course.instructor
+        )
 
 
 # Classroom views

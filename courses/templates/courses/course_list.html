@@ -3,8 +3,8 @@
   <h2>Courses</h2>
   <ul>
     {% for course in courses %}
-      <li><a href="{% url 'course_detail' course.pk %}">{{ course.title }}</a></li>
+      <li><a href="{% url 'courses:course_detail' course.pk %}">{{ course.title }}</a></li>
     {% endfor %}
   </ul>
-  <a href="{% url 'course_create' %}">+ Create new course</a>
+  <a href="{% url 'courses:course_create' %}">+ Create new course</a>
 {% endblock %}
