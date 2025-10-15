@@ -9,7 +9,6 @@ from .forms import SessionForm, AttendanceForm, AssignmentForm, SubmissionForm
 
 
 
-# Create your views here.
 
 # Course views
 
@@ -22,16 +21,17 @@ class CourseDetailView(LoginRequiredMixin, DetailView):
     model = Course
     template_name = 'courses/course_detail.html'
     context_object_name = 'course'
-
+    
 class CourseCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Course
     fields = ["title", "description"]
-    template_name = 'courses/course_form.html'
+    template_name = "courses/course_form.html"
+    success_url = reverse_lazy("courses:course_list")
 
     def form_valid(self, form):
         form.instance.instructor = self.request.user
         return super().form_valid(form)
-    
+
     def test_func(self):
         return self.request.user.role in ["manager", "employee"]
 
