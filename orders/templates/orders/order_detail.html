@@ -31,7 +31,7 @@
     </ul>
 
     {% if order.status != "paid" %}
-    <a href="{% url 'orders:payment' order.id %}" class="btn btn-primary">
+    <a href="{% url 'orders:order_pay' order.id %}" class="btn btn-primary">
         💳 Pay Now
     </a>
     {% endif %}
