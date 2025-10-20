@@ -1,6 +1,29 @@
 {% extends "base.html" %}
-
 {% block content %}
-  <h1>Admin Dashboard</h1>
-  <p>Welcome, {{ user.first_name }} — this page is for admins only.</p>
+
+<div class="container py-5">
+  <div class="card shadow-lg border-0 rounded-4">
+    <div class="card-body p-5">
+      <h2 class="mb-4 text-center text-primary fw-bold">
+        🛠️ Admin Dashboard
+      </h2>
+
+      <p class="text-center text-muted mb-5">
+        Welcome, <strong>{{ user.first_name }} {{ user.last_name }}</strong> —
+        this area is for administrators only.
+      </p>
+
+      <div class="d-flex justify-content-center gap-3">
+        <a href="{% url 'users:user_add' %}" class="btn btn-success btn-lg">
+          ➕ Add New User
+        </a>
+
+        <a href="{% url 'users:admin-dashboard' %}" class="btn btn-outline-primary btn-lg">
+          🔄 Refresh
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

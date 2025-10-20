@@ -1,12 +1,33 @@
+from pyexpat.errors import messages
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, CreateView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy
 from .mixins import RoleRequiredMixin
 from django.urls import reverse
 
 # Create your views here.
+
+User = get_user_model()
+
+
+class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = User
+    template_name = "users/user_form.html"
+    fields = ["first_name", "last_name", "email", "phone_number", "role", "password"]
+    success_url = reverse_lazy("admin-dashboard")
+
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.set_password(form.cleaned_data["password"])
+        user.save()
+        messages.success(self.request, f"User '{user.email}' created successfully.")
+        return super().form_valid(form)
 
 
 class CustomLoginView(LoginView):
