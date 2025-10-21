@@ -1,28 +1,92 @@
 {% extends "base.html" %}
+{% block title %}Admin Dashboard | Learnevo{% endblock %}
 {% block content %}
 
 <div class="container py-5">
-  <div class="card shadow-lg border-0 rounded-4">
-    <div class="card-body p-5">
-      <h2 class="mb-4 text-center text-primary fw-bold">
-        🛠️ Admin Dashboard
-      </h2>
+  <!-- Header -->
+  <div class="text-center mb-5">
+    <h1 class="fw-bold text-primary mb-2">🛠️ Admin Dashboard</h1>
+    <p class="text-muted">
+      Welcome, <strong>{{ user.first_name }} {{ user.last_name }}</strong> ({{ user.role|title }})<br>
+      Manage users, courses, books, and orders — all in one place.
+    </p>
+  </div>
 
-      <p class="text-center text-muted mb-5">
-        Welcome, <strong>{{ user.first_name }} {{ user.last_name }}</strong> —
-        this area is for administrators only.
-      </p>
+  <!-- Stats Overview -->
+  <div class="row g-4 mb-5">
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-center shadow-sm border-0 rounded-4 bg-primary text-white">
+        <div class="card-body">
+          <h5 class="fw-bold">👥 Users</h5>
+          <h3 class="fw-bold my-2">{{ user_count|default:"—" }}</h3>
+          <a href="{% url 'users:user_list' %}" class="btn btn-light btn-sm rounded-pill px-3">
+            Manage
+          </a>
+        </div>
+      </div>
+    </div>
 
-      <div class="d-flex justify-content-center gap-3">
-        <a href="{% url 'users:user_add' %}" class="btn btn-success btn-lg">
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-center shadow-sm border-0 rounded-4 bg-success text-white">
+        <div class="card-body">
+          <h5 class="fw-bold">📘 Courses</h5>
+          <h3 class="fw-bold my-2">{{ course_count|default:"—" }}</h3>
+          <a href="{% url 'courses:course_list' %}" class="btn btn-light btn-sm rounded-pill px-3">
+            Manage
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-center shadow-sm border-0 rounded-4 bg-warning text-dark">
+        <div class="card-body">
+          <h5 class="fw-bold">📚 Books</h5>
+          <h3 class="fw-bold my-2">{{ book_count|default:"—" }}</h3>
+          <a href="{% url 'books:book_list' %}" class="btn btn-dark btn-sm rounded-pill px-3">
+            Manage
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+      <div class="card text-center shadow-sm border-0 rounded-4 bg-info text-dark">
+        <div class="card-body">
+          <h5 class="fw-bold">🧾 Orders</h5>
+          <h3 class="fw-bold my-2">{{ order_count|default:"—" }}</h3>
+          <a href="{% url 'orders:order_list' %}" class="btn btn-dark btn-sm rounded-pill px-3">
+            Manage
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+      <h4 class="fw-bold text-primary mb-4">⚙️ Quick Actions</h4>
+      <div class="d-flex flex-wrap gap-3">
+        <a href="{% url 'users:user_add' %}" class="btn btn-success flex-grow-1 flex-md-grow-0">
           ➕ Add New User
         </a>
-
-        <a href="{% url 'users:admin-dashboard' %}" class="btn btn-outline-primary btn-lg">
-          🔄 Refresh
+        <a href="{% url 'courses:course_list' %}" class="btn btn-outline-primary flex-grow-1 flex-md-grow-0">
+          🎓 View All Courses
+        </a>
+        <a href="{% url 'books:book_list' %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0">
+          📖 View Books
+        </a>
+        <a href="{% url 'orders:order_list' %}" class="btn btn-outline-dark flex-grow-1 flex-md-grow-0">
+          💰 View Orders
         </a>
       </div>
     </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="text-center mt-5 text-muted small">
+    <p>© {{ now|date:"Y" }} Learnevo Admin Panel — Version 1.0</p>
   </div>
 </div>
 

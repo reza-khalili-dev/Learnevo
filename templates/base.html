@@ -43,16 +43,14 @@
             {% endif %}
 
             <!-- Admin Links -->
-            {% if user.is_authenticated %}
-              {% if user.role == "manager" %}
-              <li class="nav-item">
-                <a class="nav-link text-danger" href="/admin/">Admin Panel</a>
-              </li>
-              {% elif user.role == "employee" %}
-              <li class="nav-item">
-                <a class="nav-link text-warning" href="/admin/">Staff Panel</a>
-              </li>
-              {% endif %}
+            {% if user.role == "manager" %}
+            <li class="nav-item">
+              <a class="nav-link text-danger" href="{% url 'users:admin-dashboard' %}">Admin Dashboard</a>
+            </li>
+            {% elif user.role == "employee" %}
+            <li class="nav-item">
+              <a class="nav-link text-warning" href="{% url 'users:admin-dashboard' %}">Staff Dashboard</a>
+            </li>
             {% endif %}
           </ul>
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="text-primary fw-bold">👥 User Management</h2>
+  <a href="{% url 'users:user_add' %}" class="btn btn-success">➕ Add New User</a>
+</div>
+
+{% if users %}
+  <div class="table-responsive shadow-sm rounded">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Role</th>
+          <th>Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ u.first_name }} {{ u.last_name }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.phone_number|default:"—" }}</td>
+            <td>
+              {% if u.role == "manager" %}
+                <span class="badge bg-danger">Manager</span>
+              {% elif u.role == "employee" %}
+                <span class="badge bg-warning text-dark">Employee</span>
+              {% elif u.role == "instructor" %}
+                <span class="badge bg-primary">Instructor</span>
+              {% else %}
+                <span class="badge bg-secondary">Student</span>
+              {% endif %}
+            </td>
+            <td>{{ u.date_joined|date:"Y-m-d" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info">No users found.</div>
+{% endif %}
+{% endblock %}
