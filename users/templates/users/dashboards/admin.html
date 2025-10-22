@@ -1,93 +1,241 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard | Learnevo{% endblock %}
+
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ساده برای ظاهر مشابه تصویر */
+  .app-shell { display: flex; gap: 1.5rem; }
+  .sidebar { width: 220px; min-height: calc(100vh - 120px); background:#122230; color:#fff; border-radius:12px; padding:1.25rem; }
+  .sidebar a { color: #cfe8ff; text-decoration:none; display:block; padding:0.6rem 0; }
+  .sidebar .logo { font-weight:700; font-size:1.1rem; display:flex; gap:.6rem; align-items:center; margin-bottom:1rem; }
+  .card-stats .card { border-radius: 12px; }
+  .chart-card { min-height: 260px; }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="container-fluid">
+  <div class="app-shell">
 
-<div class="container py-5">
-  <!-- Header -->
-  <div class="text-center mb-5">
-    <h1 class="fw-bold text-primary mb-2">🛠️ Admin Dashboard</h1>
-    <p class="text-muted">
-      Welcome, <strong>{{ user.first_name }} {{ user.last_name }}</strong> ({{ user.role|title }})<br>
-      Manage users, courses, books, and orders — all in one place.
-    </p>
-  </div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="badge bg-light text-dark rounded-pill">🎓</span>
+        <span>Learnevo</span>
+      </div>
 
-  <!-- Stats Overview -->
-  <div class="row g-4 mb-5">
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-center shadow-sm border-0 rounded-4 bg-primary text-white">
-        <div class="card-body">
-          <h5 class="fw-bold">👥 Users</h5>
-          <h3 class="fw-bold my-2">{{ user_count|default:"—" }}</h3>
-          <a href="{% url 'users:user_list' %}" class="btn btn-light btn-sm rounded-pill px-3">
-            Manage
-          </a>
+      <nav class="mb-4">
+        <a href="{% url 'users:admin-dashboard' %}" class="mb-2 d-block">🏠 Dashboard</a>
+        <a href="{% url 'users:user_list' %}">👥 Users</a>
+        <a href="{% url 'courses:course_list' %}">📚 Courses</a>
+        <a href="{% url 'exams:exam_list' %}">📝 Exams</a>
+        <a href="{% url 'grades:student-grade-list' %}">📊 Grades</a>
+        <a href="{% url 'books:book_list' %}">📘 Books</a>
+        <a href="{% url 'orders:order_list' %}">💳 Orders</a>
+      </nav>
+
+      <div class="mt-auto small text-muted">
+        <div>Signed in as</div>
+        <div class="fw-bold">{{ user.first_name }} {{ user.last_name }}</div>
+        <div class="text-info">{{ user.role|title }}</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-grow-1">
+
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-0">Admin Dashboard</h2>
+          <small class="text-muted">Overview & management</small>
+        </div>
+        <div>
+          <a href="{% url 'users:user_add' %}" class="btn btn-success me-2">➕ Add New User</a>
+          <a href="{% url 'users:user_list' %}" class="btn btn-outline-primary">👥 Users</a>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-center shadow-sm border-0 rounded-4 bg-success text-white">
-        <div class="card-body">
-          <h5 class="fw-bold">📘 Courses</h5>
-          <h3 class="fw-bold my-2">{{ course_count|default:"—" }}</h3>
-          <a href="{% url 'courses:course_list' %}" class="btn btn-light btn-sm rounded-pill px-3">
-            Manage
-          </a>
+      <!-- Stats -->
+      <div class="row g-3 card-stats mb-4">
+        <div class="col-md-3">
+          <div class="card p-3 shadow-sm">
+            <small class="text-muted">Total Users</small>
+            <h3 class="mt-2">{{ user_count }}</h3>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card p-3 shadow-sm">
+            <small class="text-muted">Students</small>
+            <h3 class="mt-2">{{ student_count }}</h3>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card p-3 shadow-sm">
+            <small class="text-muted">Instructors</small>
+            <h3 class="mt-2">{{ instructor_count }}</h3>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card p-3 shadow-sm">
+            <small class="text-muted">Courses</small>
+            <h3 class="mt-2">{{ course_count }}</h3>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-center shadow-sm border-0 rounded-4 bg-warning text-dark">
-        <div class="card-body">
-          <h5 class="fw-bold">📚 Books</h5>
-          <h3 class="fw-bold my-2">{{ book_count|default:"—" }}</h3>
-          <a href="{% url 'books:book_list' %}" class="btn btn-dark btn-sm rounded-pill px-3">
-            Manage
-          </a>
+      <!-- Charts row -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-7">
+          <div class="card chart-card p-3 shadow-sm">
+            <h6>User Roles Distribution</h6>
+            <canvas id="rolesPie" style="max-height:320px"></canvas>
+          </div>
+        </div>
+
+        <div class="col-md-5">
+          <div class="card p-3 shadow-sm">
+            <h6>Monthly Signups</h6>
+            <canvas id="monthlyLine" style="max-height:320px"></canvas>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-3 col-sm-6">
-      <div class="card text-center shadow-sm border-0 rounded-4 bg-info text-dark">
-        <div class="card-body">
-          <h5 class="fw-bold">🧾 Orders</h5>
-          <h3 class="fw-bold my-2">{{ order_count|default:"—" }}</h3>
-          <a href="{% url 'orders:order_list' %}" class="btn btn-dark btn-sm rounded-pill px-3">
-            Manage
-          </a>
+      <!-- Recent lists -->
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card p-3 shadow-sm">
+            <h6>Recent Users</h6>
+            <ul class="list-group list-group-flush">
+              {% for u in recent_users %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="fw-bold">{{ u.first_name }} {{ u.last_name }}</div>
+                    <div class="small text-muted">{{ u.email }}</div>
+                  </div>
+                  <div class="text-muted small">{{ u.date_joined|date:"Y-m-d" }}</div>
+                </li>
+              {% empty %}
+                <li class="list-group-item">No users yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card p-3 shadow-sm">
+            <h6>Recent Instructors</h6>
+            <ul class="list-group list-group-flush">
+              {% for ins in recent_instructors %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="fw-bold">{{ ins.first_name }} {{ ins.last_name }}</div>
+                    <div class="small text-muted">{{ ins.email }}</div>
+                  </div>
+                  <div class="text-muted small">{{ ins.date_joined|date:"Y-m-d" }}</div>
+                </li>
+              {% empty %}
+                <li class="list-group-item">No instructors yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Actions -->
-  <div class="card shadow-sm border-0 rounded-4">
-    <div class="card-body p-4">
-      <h4 class="fw-bold text-primary mb-4">⚙️ Quick Actions</h4>
-      <div class="d-flex flex-wrap gap-3">
-        <a href="{% url 'users:user_add' %}" class="btn btn-success flex-grow-1 flex-md-grow-0">
-          ➕ Add New User
-        </a>
-        <a href="{% url 'courses:course_list' %}" class="btn btn-outline-primary flex-grow-1 flex-md-grow-0">
-          🎓 View All Courses
-        </a>
-        <a href="{% url 'books:book_list' %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0">
-          📖 View Books
-        </a>
-        <a href="{% url 'orders:order_list' %}" class="btn btn-outline-dark flex-grow-1 flex-md-grow-0">
-          💰 View Orders
-        </a>
+      <!-- Classes summary -->
+      <div class="row g-3 mt-3">
+        <div class="col-12">
+          <div class="card p-3 shadow-sm">
+            <h6>Recent Classes (with student counts & avg grade)</h6>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th><th>Title</th><th>Students</th><th>Avg Grade</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for cl in classes %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ cl.title }}</td>
+                      <td>{{ cl.students_count }}</td>
+                      <td>{% if cl.avg_grade %}{{ cl.avg_grade }}{% else %}—{% endif %}</td>
+                      <td><a href="{% url 'courses:class_detail' cl.id %}" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="5">No classes found.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Footer -->
-  <div class="text-center mt-5 text-muted small">
-    <p>© {{ now|date:"Y" }} Learnevo Admin Panel — Version 1.0</p>
+    </main>
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<!-- داده‌ها را با json_script ایمن صادر می‌کنیم -->
+{{ roles_pie_labels|json_script:"rolesLabelsData" }}
+{{ roles_pie_values|json_script:"rolesValuesData" }}
+{{ monthly_labels|json_script:"monthlyLabelsData" }}
+{{ monthly_data|json_script:"monthlyData" }}
+
+<script>
+  // DOM -> JS: خواندن JSON ایمن از تگ‌های <script type="application/json" id="...">
+  const rolesLabels = JSON.parse(document.getElementById("rolesLabelsData").textContent);
+  const rolesValues = JSON.parse(document.getElementById("rolesValuesData").textContent);
+  const monthlyLabels = JSON.parse(document.getElementById("monthlyLabelsData").textContent);
+  const monthlyData = JSON.parse(document.getElementById("monthlyData").textContent);
+
+  // Pie chart (roles)
+  const ctxPie = document.getElementById('rolesPie').getContext('2d');
+  new Chart(ctxPie, {
+    type: 'pie',
+    data: {
+      labels: rolesLabels,
+      datasets: [{
+        data: rolesValues,
+        backgroundColor: ['#4C9AFF', '#4CD18A', '#FFD166'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom' } },
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+
+  // Line chart (monthly)
+  const ctxLine = document.getElementById('monthlyLine').getContext('2d');
+  new Chart(ctxLine, {
+    type: 'line',
+    data: {
+      labels: monthlyLabels,
+      datasets: [{
+        label: 'Signups',
+        data: monthlyData,
+        tension: 0.35,
+        fill: true,
+        backgroundColor: 'rgba(76,154,255,0.12)',
+        borderColor: '#4C9AFF',
+        pointRadius: 3
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+</script>
 {% endblock %}

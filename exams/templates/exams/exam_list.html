@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Exams</h2>
+<ul>
+  {% for exam in exams %}
+    <li>{{ exam.title }} — <a href="{% url 'exams:take_exam' exam.id %}">Take Exam</a></li>
+  {% empty %}
+    <li>No exams available.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

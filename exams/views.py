@@ -1,4 +1,5 @@
 from django.views import View
+from django.views.generic import ListView
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
@@ -39,3 +40,8 @@ class ExamResultView(LoginRequiredMixin, View):
         exam = get_object_or_404(Exam, id=exam_id)
         result = exam.results.filter(student=request.user).first()
         return render(request, "exams/exam_result.html", {"exam": exam, "result": result})
+
+class ExamListView(LoginRequiredMixin, ListView):
+    model = Exam
+    template_name = "exams/exam_list.html"
+    context_object_name = "exams"
