@@ -2,10 +2,9 @@
 {% block title %}Admin Dashboard | Learnevo{% endblock %}
 
 {% block head %}
-<!-- Chart.js CDN -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
 <style>
-  /* ساده برای ظاهر مشابه تصویر */
   .app-shell { display: flex; gap: 1.5rem; }
   .sidebar { width: 220px; min-height: calc(100vh - 120px); background:#122230; color:#fff; border-radius:12px; padding:1.25rem; }
   .sidebar a { color: #cfe8ff; text-decoration:none; display:block; padding:0.6rem 0; }
@@ -34,9 +33,10 @@
         <a href="{% url 'grades:student-grade-list' %}">📊 Grades</a>
         <a href="{% url 'books:book_list' %}">📘 Books</a>
         <a href="{% url 'orders:order_list' %}">💳 Orders</a>
+        
       </nav>
 
-      <div class="mt-auto small text-muted">
+      <div class="mt-auto small text-info">
         <div>Signed in as</div>
         <div class="fw-bold">{{ user.first_name }} {{ user.last_name }}</div>
         <div class="text-info">{{ user.role|title }}</div>
@@ -182,14 +182,12 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- داده‌ها را با json_script ایمن صادر می‌کنیم -->
 {{ roles_pie_labels|json_script:"rolesLabelsData" }}
 {{ roles_pie_values|json_script:"rolesValuesData" }}
 {{ monthly_labels|json_script:"monthlyLabelsData" }}
 {{ monthly_data|json_script:"monthlyData" }}
 
 <script>
-  // DOM -> JS: خواندن JSON ایمن از تگ‌های <script type="application/json" id="...">
   const rolesLabels = JSON.parse(document.getElementById("rolesLabelsData").textContent);
   const rolesValues = JSON.parse(document.getElementById("rolesValuesData").textContent);
   const monthlyLabels = JSON.parse(document.getElementById("monthlyLabelsData").textContent);

@@ -1,5 +1,9 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.conf import settings
+from courses.models import Course
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # Create your models here.
 
@@ -49,4 +53,26 @@ class CustomUser(AbstractUser):
         return f"{self.email} ({self.role})"
 
     
-    
+def user_profile_upload_path(instance, filename):
+    return f"profiles/{instance.user.id}/{filename}"
+
+class Profile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
+    image = models.ImageField(upload_to=user_profile_upload_path, default="profiles/default.jpg")
+    bio = models.TextField(blank=True, null=True)
+    enrolled_courses = models.ManyToManyField(Course, blank=True, related_name="enrolled_users")
+
+    def __str__(self):
+        return f"Profile of {self.user.get_full_name() or self.user.email}"
+
+
+@receiver(post_save, sender=CustomUser)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=CustomUser)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, "profile"):
+        instance.profile.save()

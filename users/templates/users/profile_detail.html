@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile | Learnevo{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+    <div class="row g-0">
+      <!-- Profile Image Section -->
+      <div class="col-md-4 bg-light d-flex flex-column align-items-center justify-content-center p-4">
+        <img src="{{ profile.image.url }}" alt="Profile Image"
+             class="img-fluid rounded-circle shadow mb-3"
+             style="width: 150px; height: 150px; object-fit: cover;">
+        <h4 class="fw-bold text-center">{{ profile.user.first_name }} {{ profile.user.last_name }}</h4>
+        <p class="text-muted mb-1">{{ profile.user.email }}</p>
+        <span class="badge bg-info text-dark text-uppercase px-3 py-2">{{ profile.user.role }}</span>
+
+        {% if request.user.role in "manager employee" or request.user == profile.user %}
+          <a href="{% url 'users:profile_edit' profile.id %}" class="btn btn-outline-primary btn-sm mt-3">
+            ✏️ Edit Profile
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- Profile Info Section -->
+      <div class="col-md-8 p-4">
+        <h5 class="border-bottom pb-2 mb-3">Profile Details</h5>
+        <p><strong>Full Name:</strong> {{ profile.user.first_name }} {{ profile.user.last_name }}</p>
+        <p><strong>Email:</strong> {{ profile.user.email }}</p>
+        <p><strong>Phone:</strong> {{ profile.user.phone_number|default:"—" }}</p>
+        <p><strong>Bio:</strong> {{ profile.bio|default:"No bio added yet." }}</p>
+
+        {% if profile.user.role == "student" %}
+        <hr>
+        <h5 class="border-bottom pb-2 mb-3">My Courses</h5>
+        {% if profile.enrolled_courses.all %}
+          <ul class="list-group mb-3">
+            {% for course in profile.enrolled_courses.all %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ course.title }}
+                <a href="{% url 'courses:course_detail' course.id %}" class="btn btn-sm btn-outline-secondary">View</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No courses enrolled yet.</p>
+        {% endif %}
+
+        <h5 class="border-bottom pb-2 mb-3">My Grades</h5>
+        {% if profile.user.results.all %}
+          <ul class="list-group">
+            {% for result in profile.user.results.all %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ result.exam.title }}
+                <span class="badge bg-success">{{ result.score }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No grades yet.</p>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

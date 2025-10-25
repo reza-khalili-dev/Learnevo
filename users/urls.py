@@ -13,6 +13,8 @@ urlpatterns = [
     path("dashboard/admin/", views.AdminDashboardView.as_view(), name="admin-dashboard"),
     path("users/", views.UserListView.as_view(), name="user_list"),
     path("add/", views.UserCreateView.as_view(), name="user_add"),
+    path("profile/<int:pk>/", views.ProfileView.as_view(), name="profile_detail"),
+    path("profile/<int:pk>/edit/", views.ProfileEditView.as_view(), name="profile_edit"),
     
     
 ]

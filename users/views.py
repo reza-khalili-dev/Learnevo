@@ -1,7 +1,7 @@
 from pyexpat.errors import messages
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView, CreateView, ListView
+from django.views.generic import TemplateView, CreateView, ListView, DetailView, UpdateView 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
@@ -10,6 +10,10 @@ from .mixins import RoleRequiredMixin
 from django.urls import reverse
 from django.contrib import messages
 from django.utils import timezone
+from .models import Profile
+from django.shortcuts import get_object_or_404
+from .forms import UserRegisterForm 
+from django import forms
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -84,11 +88,11 @@ class CustomLoginView(LoginView):
         role = getattr(user, 'role', None)
 
         if role == 'student':
-            return reverse('student-dashboard')
+            return reverse('users:student-dashboard')
         if role == 'instructor':
-            return reverse('instructor-dashboard')
+            return reverse('users:instructor-dashboard')
         if role in ('manager', 'employee'):
-            return reverse('admin-dashboard')
+            return reverse('users:admin-dashboard')
         
         return super().get_success_url()  
     
@@ -104,22 +108,16 @@ class InstructorDashboardView(LoginRequiredMixin, RoleRequiredMixin, TemplateVie
     template_name = 'users/dashboards/instructor.html'
 
 class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    """
-    داشبورد ادمین: آمار کلی + نمودارها + لیست‌های سریع
-    دسترسی: فقط نقش manager یا employee
-    """
+
     template_name = "users/dashboards/admin.html"
 
-    # اجازه: فقط manager یا employee می‌توانند وارد شوند
     def test_func(self):
         return getattr(self.request.user, "role", None) in ["manager", "employee"]
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        # ====== آمار کلی ======
         ctx["user_count"] = User.objects.count()
-        # شمارش نقش‌ها (Students / Instructors / Admins)
         ctx["student_count"] = User.objects.filter(role="student").count()
         ctx["instructor_count"] = User.objects.filter(role="instructor").count()
         ctx["manager_count"] = User.objects.filter(role="manager").count()
@@ -129,20 +127,16 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         ctx["order_count"] = Order.objects.count() if Order is not None else 0
         ctx["exam_count"] = Exam.objects.count() if Exam is not None else 0
 
-        # ====== داده‌های نمودار ======
-        # Pie: نقش کاربران
         ctx["roles_pie"] = {
             "students": ctx["student_count"],
             "instructors": ctx["instructor_count"],
             "managers": ctx["manager_count"],
         }
 
-        # Line: growth (نمونه‌ای از 6 ماه اخیر بر اساس ثبت‌نام‌ها)
-        # اینجا آمار ماهانه ساده‌سازی شده است
         now = timezone.now()
         monthly = []
         labels = []
-        for i in range(5, -1, -1):  # 6 ماه اخیر
+        for i in range(5, -1, -1): 
             start = (now.replace(day=1) - timezone.timedelta(days=30*i)).replace(day=1)
             end = (start + timezone.timedelta(days=31)).replace(day=1)
             count = User.objects.filter(date_joined__gte=start, date_joined__lt=end).count()
@@ -151,11 +145,9 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         ctx["monthly_labels"] = labels
         ctx["monthly_data"] = monthly
 
-        # ====== لیست‌های سریع برای جدول‌ها ======
         ctx["recent_users"] = User.objects.order_by("-date_joined")[:8]
         ctx["recent_instructors"] = User.objects.filter(role="instructor").order_by("-date_joined")[:8]
 
-        # ====== اطلاعات کلاس‌ها و میانگین نمرات (اگر مدل Grade موجود باشد) ======
         classes = []
         if Classroom is not None:
             classrooms = Classroom.objects.all().order_by("-id")[:6]
@@ -166,12 +158,9 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                     "students_count": getattr(cl, "students", []).count() if hasattr(cl, "students") else 0,
                     "avg_grade": None,
                 }
-                # تلاش برای محاسبه میانگین نمره‌ی دانشجویان در آن کلاس (اگر Grade موجود)
                 if Grade is not None:
-                    # سعی می‌کنیم نمره‌های مربوط به امتحانات/assignments آن کلاس را محاسبه کنیم
                     try:
-                        # این بخش ممکن است نیاز به هماهنگی با مدل Grade شما داشته باشد
-                        g_qs = Grade.objects.filter(exam__course__classes=cl)  # فرض ساختار
+                        g_qs = Grade.objects.filter(exam__course__classes=cl) 
                         avg = g_qs.aggregate_avg = g_qs.aggregate(models.Avg("score")).get("score__avg")
                         cl_info["avg_grade"] = round(avg, 2) if avg else None
                     except Exception:
@@ -179,8 +168,58 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 classes.append(cl_info)
         ctx["classes"] = classes
 
-        # ====== نمودار نقش‌ها بصورت کلید/مقدار (قابل استفاده در Chart.js) ======
         ctx["roles_pie_labels"] = list(ctx["roles_pie"].keys())
         ctx["roles_pie_values"] = list(ctx["roles_pie"].values())
 
         return ctx
+
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ["image", "bio"]
+
+class ProfileView(LoginRequiredMixin, DetailView):
+    model = Profile
+    template_name = "users/profile_detail.html"
+    context_object_name = "profile"
+
+    def get_object(self):
+        user = self.request.user
+        profile_id = self.kwargs.get("pk")
+
+        if user.role == "manager" and profile_id:
+            return get_object_or_404(Profile, pk=profile_id)
+
+        if user.role == "employee" and profile_id:
+            return get_object_or_404(Profile, pk=profile_id, user__role="student")
+        return user.profile
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        profile = ctx["profile"]
+
+        if Course:
+            ctx["enrolled_courses"] = getattr(profile.user, "enrolled_courses", Course.objects.none())
+        if Grade and hasattr(profile.user, "results"):
+            ctx["grades"] = profile.user.results.all()
+        return ctx
+
+class ProfileEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Profile
+    form_class = ProfileEditForm
+    template_name = "users/profile_edit.html"
+
+    def test_func(self):
+        user = self.request.user
+        profile = self.get_object()
+
+        if user.role == "manager":
+            return True
+        if user.role == "employee" and profile.user.role == "student":
+            return True
+        return profile.user == user
+
+    def get_success_url(self):
+        messages.success(self.request, "Profile updated successfully ✅")
+        return reverse_lazy("users:profile_detail", kwargs={"pk": self.object.pk})

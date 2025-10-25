@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile | Learnevo{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-lg border-0 rounded-4 p-4 mx-auto" style="max-width: 600px;">
+    <h4 class="mb-4 text-center">✏️ Edit Profile</h4>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3 text-center">
+        <img src="{{ form.instance.image.url }}" alt="Profile Image"
+             class="rounded-circle shadow mb-3"
+             style="width: 120px; height: 120px; object-fit: cover;">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Profile Picture</label>
+        {{ form.image }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Bio</label>
+        {{ form.bio }}
+      </div>
+
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+        <a href="{% url 'users:profile_detail' form.instance.id %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
