@@ -12,7 +12,11 @@ class UserRegisterForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit)
         image = self.cleaned_data.get('image')
-        if image:
-            user.profile.image = image
-            user.profile.save()
+
+        if commit:
+            profile = getattr(user, "profile", None)
+            if profile and image:
+                profile.image = image
+                profile.save()
+
         return user
