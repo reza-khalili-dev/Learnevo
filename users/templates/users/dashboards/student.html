@@ -1,6 +1,115 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Student Dashboard{% endblock %}
 
 {% block content %}
-  <h1>Student Dashboard</h1>
-  <p>Welcome, {{ user.first_name }} — this page is for students only.</p>
+<div class="container mt-4">
+  <h2 class="mb-4">Welcome back, {{ user.first_name }} 👋</h2>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title">My Courses</h5>
+          <p class="display-6 fw-bold text-primary">{{ courses.count }}</p>
+          <p class="text-muted mb-0">Active Enrollments</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title">Active Exams</h5>
+          <p class="display-6 fw-bold text-success">{{ active_exams.count }}</p>
+          <p class="text-muted mb-0">Exams Available</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title">Average Score</h5>
+          <p class="display-6 fw-bold text-warning">{{ average_score|default:"-" }}</p>
+          <p class="text-muted mb-0">Overall Performance</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Sections -->
+  <div class="row g-4">
+    <!-- Courses -->
+    <div class="col-lg-4">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-light fw-bold">My Courses</div>
+        <div class="card-body">
+          {% if courses %}
+            <ul class="list-group list-group-flush">
+              {% for course in courses %}
+                <li class="list-group-item">
+                  <strong>{{ course.title }}</strong><br>
+                  <small class="text-muted">Instructor: {{ course.instructor.get_full_name }}</small><br>
+                  <a href="{% url 'course_detail' course.id %}" class="btn btn-sm btn-outline-primary mt-2">View</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No courses enrolled yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Sessions -->
+    <div class="col-lg-4">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-light fw-bold">Upcoming Sessions</div>
+        <div class="card-body">
+          {% if upcoming_sessions %}
+            <ul class="list-group list-group-flush">
+              {% for session in upcoming_sessions %}
+                <li class="list-group-item">
+                  <strong>{{ session.title }}</strong><br>
+                  <small class="text-muted">Date: {{ session.date|date:"M d, Y - H:i" }}</small><br>
+                  <a href="{% url 'session_detail' session.id %}" class="btn btn-sm btn-outline-success mt-2">Join</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No upcoming sessions.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Results -->
+    <div class="col-lg-4">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-light fw-bold">Recent Results</div>
+        <div class="card-body">
+          {% if recent_results %}
+            <ul class="list-group list-group-flush">
+              {% for result in recent_results %}
+                <li class="list-group-item">
+                  <strong>{{ result.exam.title }}</strong><br>
+                  <small class="text-muted">Score: {{ result.score }} / {{ result.exam.total_score }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No exam results yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Actions -->
+  <div class="mt-5 text-center">
+    <a href="#" class="btn btn-outline-secondary disabled">Edit Profile</a>
+    <a href="#" class="btn btn-outline-warning ms-2">Change Password</a>
+    <a href="{% url 'users:logout' %}" class="btn btn-outline-danger ms-2">Logout</a>
+  </div>
+</div>
 {% endblock %}
