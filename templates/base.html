@@ -63,7 +63,9 @@
                 </span>
               </li>
               <li class="nav-item">
-                <a class="btn btn-outline-danger btn-sm" href="{% url 'users:logout' %}">Logout</a>
+                    <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+                      {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger ms-2">Logout</button>
               </li>
             {% else %}
               <li class="nav-item me-2">
