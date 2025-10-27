@@ -4,6 +4,6 @@
 <p>کلاس: {{ session.classroom.title }}</p>
 <p>تاریخ: {{ session.date }}</p>
 <p>زمان: {{ session.start_time }} تا {{ session.end_time }}</p>
-<a href="{% url 'session_update' session.pk %}">Edit</a> |
-<a href="{% url 'session_delete' session.pk %}">Delete</a>
+<a href="{% url 'courses:session_update' session.pk %}">Edit</a> |
+<a href="{% url 'courses:session_delete' session.pk %}">Delete</a>
 {% endblock %}

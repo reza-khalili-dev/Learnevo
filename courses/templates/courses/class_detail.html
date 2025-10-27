@@ -1,0 +1,17 @@
+<h3>Sessions</h3>
+{% if user == class_obj.course.instructor or user.role == "manager" or user.role == "employee" %}
+  <a href="{% url 'courses:session_create' class_obj.pk %}" class="btn btn-sm btn-primary mb-2">Add New Session</a>
+{% endif %}
+
+<ul>
+  {% for session in class_obj.session_set.all %}
+    <li>
+      {{ session.title }} - {{ session.date }} 
+      (<a href="{% url 'courses:session_detail' session.pk %}">View</a> |
+       <a href="{% url 'courses:session_update' session.pk %}">Edit</a> |
+       <a href="{% url 'courses:session_delete' session.pk %}">Delete</a>)
+    </li>
+  {% empty %}
+    <li>No sessions yet.</li>
+  {% endfor %}
+</ul>

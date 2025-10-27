@@ -64,7 +64,7 @@ class CourseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 class ClassListView(LoginRequiredMixin, ListView):
     model = Classroom
-    template_name = 'courses/class_list.html'
+    template_name = 'courses/session_list.html'
     context_object_name = 'classes'
 
 class ClassDetailView(LoginRequiredMixin, DetailView):
@@ -143,7 +143,9 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     
     def test_func(self):
         classroom = Classroom.objects.get(id=self.kwargs["classroom_id"])
-        return self.request.user == classroom.course.instructor
+        return self.request.user == classroom.course.instructor or self.request.user.role in ["manager", "employee"]
+
+
 
 class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Session
