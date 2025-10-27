@@ -56,7 +56,7 @@ User = get_user_model()
 class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = User
     template_name = "users/user_form.html"
-    fields = ["first_name", "last_name", "email", "phone_number", "role", "password"]
+    form_class = UserRegisterForm 
     success_url = reverse_lazy("users:user_list")
 
     def form_valid(self, form):

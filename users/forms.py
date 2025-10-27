@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import CustomUser, Profile
 
 class UserRegisterForm(UserCreationForm):
@@ -20,3 +20,12 @@ class UserRegisterForm(UserCreationForm):
                 profile.save()
 
         return user
+
+
+class CustomUserChangeForm(UserChangeForm):
+    class Meta:
+        model = CustomUser
+        fields = ('email', 'first_name', 'last_name', 'phone_number', 'role', 'is_active', 'is_staff')
+        widgets = {
+            'password': forms.PasswordInput(render_value=True),
+        }
