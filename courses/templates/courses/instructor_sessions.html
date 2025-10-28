@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2>My Sessions</h2>
+  <ul class="list-group">
+    {% for session in sessions %}
+      <li class="list-group-item">
+        {{ session.title }} — {{ session.course.title }}
+      </li>
+    {% empty %}
+      <li class="list-group-item text-muted">No sessions available yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

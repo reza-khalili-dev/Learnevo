@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">🧪 My Exams</h2>
+  {% if exams %}
+    <div class="list-group">
+      {% for exam in exams %}
+        <a href="{% url 'exams:exam_result' exam.id %}" class="list-group-item list-group-item-action">
+          <strong>{{ exam.title }}</strong> — {{ exam.course.name }}
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">You haven’t created any exams yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

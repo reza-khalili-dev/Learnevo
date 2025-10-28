@@ -45,3 +45,11 @@ class ExamListView(LoginRequiredMixin, ListView):
     model = Exam
     template_name = "exams/exam_list.html"
     context_object_name = "exams"
+
+class InstructorExamListView(LoginRequiredMixin, ListView):
+    model = Exam
+    template_name = "exams/instructor_exams.html"
+    context_object_name = "exams"
+
+    def get_queryset(self):
+        return Exam.objects.filter(instructor=self.request.user)

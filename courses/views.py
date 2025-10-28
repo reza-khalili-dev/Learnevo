@@ -388,3 +388,25 @@ class SubmissionListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def get_queryset(self):
         return Submission.objects.filter(assignment__pk=self.kwargs.get("assignment_pk")).select_related("student").order_by("-submitted_at")
 
+
+class InstructorCourseListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Course
+    template_name = "courses/instructor_courses.html"
+    context_object_name = "courses"
+
+    def get_queryset(self):
+        return Course.objects.filter(instructor=self.request.user)
+
+    def test_func(self):
+        return self.request.user.role == "Instructor"
+
+class InstructorSessionListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Session
+    template_name = "courses/instructor_sessions.html"
+    context_object_name = "sessions"
+
+    def get_queryset(self):
+        return Session.objects.filter(course__instructor=self.request.user)
+
+    def test_func(self):
+        return self.request.user.role == "Instructor"
