@@ -1,6 +1,82 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Instructor Dashboard{% endblock %}
 
 {% block content %}
-  <h1>Instructor Dashboard</h1>
-  <p>Welcome, {{ user.first_name }} — this page is for Instructors only.</p>
+<div class="container mt-5">
+  <h2 class="mb-4">🎓 Instructor Dashboard</h2>
+
+  <div class="row">
+    <!-- Card: Profile -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">👤 Profile</h5>
+          <p class="card-text">Manage your personal details and account settings.</p>
+          <a href="#" class="btn btn-outline-secondary disabled">Edit Profile</a>
+          <a href="#" class="btn btn-outline-warning ms-2">Change Password</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: My Courses -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">📘 My Courses</h5>
+          <p class="card-text">View, edit, and manage the courses you teach.</p>
+          <a href="{% url 'courses:instructor_courses' %}" class="btn btn-outline-primary">View Courses</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Sessions -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">🗓️ Sessions</h5>
+          <p class="card-text">Create and manage live or recorded class sessions.</p>
+          <a href="{% url 'courses:instructor_sessions' %}" class="btn btn-outline-success">Manage Sessions</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Exams -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">📝 Exams</h5>
+          <p class="card-text">Create and evaluate exams for your students.</p>
+          <a href="{% url 'exams:instructor_exams' %}" class="btn btn-outline-info">Manage Exams</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Messages -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">💬 Messages</h5>
+          <p class="card-text">Communicate with students and receive feedback.</p>
+          <a href="#" class="btn btn-outline-dark disabled">Coming Soon</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Logout -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h5 class="card-title">🚪 Logout</h5>
+          <p class="card-text">End your session securely.</p>
+          <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger">Logout</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
