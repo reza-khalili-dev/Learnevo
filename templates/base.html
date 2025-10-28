@@ -42,15 +42,25 @@
             </li>
             {% endif %}
 
-            <!-- Admin Links -->
-            {% if user.role == "manager" %}
-            <li class="nav-item">
-              <a class="nav-link text-danger" href="{% url 'users:admin-dashboard' %}">Admin Dashboard</a>
-            </li>
-            {% elif user.role == "employee" %}
-            <li class="nav-item">
-              <a class="nav-link text-warning" href="{% url 'users:admin-dashboard' %}">Staff Dashboard</a>
-            </li>
+            <!-- Dashboard Links (All Roles) -->
+            {% if user.is_authenticated %}
+              {% if user.role == "manager" %}
+                <li class="nav-item">
+                  <a class="nav-link text-danger" href="{% url 'users:admin-dashboard' %}">Admin Dashboard</a>
+                </li>
+              {% elif user.role == "employee" %}
+                <li class="nav-item">
+                  <a class="nav-link text-warning" href="{% url 'users:employee-dashboard' %}">Staff Dashboard</a>
+                </li>
+              {% elif user.role == "instructor" %}
+                <li class="nav-item">
+                  <a class="nav-link text-success" href="{% url 'users:instructor-dashboard' %}">Instructor Dashboard</a>
+                </li>
+              {% elif user.role == "student" %}
+                <li class="nav-item">
+                  <a class="nav-link text-primary" href="{% url 'users:student-dashboard' %}">Student Dashboard</a>
+                </li>
+              {% endif %}
             {% endif %}
           </ul>
 
@@ -63,10 +73,10 @@
                 </span>
               </li>
               <li class="nav-item">
-                    <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
-                      {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger ms-2">Logout</button>
-                    </form>
+                <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger ms-2">Logout</button>
+                </form>
               </li>
             {% else %}
               <li class="nav-item me-2">
