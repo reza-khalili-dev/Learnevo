@@ -5,7 +5,6 @@ from django.views.generic import TemplateView, CreateView, ListView, DetailView,
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
-from books import models
 from .mixins import RoleRequiredMixin
 from django.urls import reverse
 from django.contrib import messages
@@ -14,6 +13,12 @@ from .models import Profile
 from django.shortcuts import get_object_or_404
 from .forms import UserRegisterForm 
 from django import forms
+from books import models
+from courses.models import Course, Session
+from users.models import CustomUser
+from orders.models import Order
+from exams.models import Exam
+
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -223,3 +228,40 @@ class ProfileEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_success_url(self):
         messages.success(self.request, "Profile updated successfully ✅")
         return reverse_lazy("users:profile_detail", kwargs={"pk": self.object.pk})
+
+
+# users/views.py
+
+class EmployeeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "users/dashboards/employee.html"
+
+    def test_func(self):
+        return self.request.user.role == "employee"
+
+    def get_context_data(self, **kwargs):
+        from courses.models import Course, Session
+        from users.models import CustomUser
+        from orders.models import Order
+        from exams.models import Exam
+
+        context = super().get_context_data(**kwargs)
+        context["courses_count"] = Course.objects.count()
+        context["sessions_count"] = Session.objects.count()
+        context["students_count"] = CustomUser.objects.filter(role="student").count()
+        context["pending_payments"] = Order.objects.filter(status__in=["pending", "unpaid"]).count()
+        context["exams_count"] = Exam.objects.count()
+        return context
+
+
+class StudentListView(ListView):
+    model = CustomUser
+    template_name = "users/student_list.html"
+    context_object_name = "students"
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(role="student")
+
+class StudentCreateView(CreateView):
+    model = CustomUser
+    template_name = "users/student_form.html"
+    fields = ["first_name", "last_name", "email", "phone_number"]

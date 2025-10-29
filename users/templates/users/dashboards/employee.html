@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Employee Dashboard | Learnevo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4 text-center text-warning fw-bold">📊 Employee Dashboard</h2>
+
+  <div class="row">
+    <!-- Courses -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h5 class="card-title">📚 Courses</h5>
+          <p class="card-text">Manage and update course information and instructors.</p>
+          <a href="{% url 'courses:course_list' %}" class="btn btn-outline-primary">Manage Courses</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessions -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h5 class="card-title">🗓️ Sessions</h5>
+          <p class="card-text">Create, edit, and assign class sessions to students or instructors.</p>
+          <a href="{% url 'courses:class_list' %}" class="btn btn-outline-success">Manage Sessions</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h5 class="card-title">🎓 Students</h5>
+          <p class="card-text">Register and view students enrolled in the system.</p>
+          <a href="{% url 'users:student_list' %}" class="btn btn-outline-info">Register Students</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exams -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h5 class="card-title">📝 Exams</h5>
+          <p class="card-text">View all exams, results, and participation of students.</p>
+          <a href="{% url 'exams:exam_list' %}" class="btn btn-outline-secondary">View Exams</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h5 class="card-title">💰 Payments</h5>
+          <p class="card-text">Check student payments and handle pending transactions.</p>
+          <a href="{% url 'orders:order_list' %}" class="btn btn-outline-warning">Manage Payments</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h5 class="card-title">📈 Reports</h5>
+          <p class="card-text">View educational activity reports (no financial details).</p>
+          <a href="#" class="btn btn-outline-dark disabled">View Reports</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

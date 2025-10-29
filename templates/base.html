@@ -50,7 +50,7 @@
                 </li>
               {% elif user.role == "employee" %}
                 <li class="nav-item">
-                  <a class="nav-link text-warning" href="{% url 'users:employee-dashboard' %}">Staff Dashboard</a>
+                  <a class="nav-link text-warning" href="{% url 'users:employee-dashboard' %}">Employee Dashboard</a>
                 </li>
               {% elif user.role == "instructor" %}
                 <li class="nav-item">

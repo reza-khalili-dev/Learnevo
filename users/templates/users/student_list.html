@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Student List</h2>
+  <ul>
+    {% for student in students %}
+      <li>{{ student.first_name }} {{ student.last_name }}</li>
+    {% empty %}
+      <li>No students found.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
