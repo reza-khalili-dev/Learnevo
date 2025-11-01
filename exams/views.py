@@ -11,7 +11,7 @@ from .services import calculate_exam_score
 
 class TakeExamView(LoginRequiredMixin, View):
     def get(self, request, exam_id):
-        exam = get_object_or_404.filter(Exam, exam_id)
+        exam = get_object_or_404(Exam, id=exam_id)
         questions = exam.questions.all()
         return render(request, "exams/take_exam.html", {"exam": exam, "questions": questions})
 
