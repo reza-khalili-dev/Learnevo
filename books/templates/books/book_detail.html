@@ -2,7 +2,17 @@
 
 {% block content %}
   <div class="container mt-4">
-    <h2>{{ book.title }}</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">{{ book.title }}</h2>
+
+      {% if user.is_authenticated and user.role in "manager employee instructor" %}
+        <div>
+          <a href="{% url 'books:book_edit' book.id %}" class="btn btn-sm btn-warning me-2">Edit</a>
+          <a href="{% url 'books:book_delete' book.id %}" class="btn btn-sm btn-danger">Delete</a>
+        </div>
+      {% endif %}
+    </div>
+
     <p><strong>Author:</strong> {{ book.author }}</p>
     <p><strong>Description:</strong> {{ book.description }}</p>
     <p><strong>Price:</strong> ${{ book.price }}</p>
@@ -14,7 +24,9 @@
         <button type="submit" class="btn btn-primary">Buy Now</button>
       </form>
     {% else %}
-      <p class="text-muted">Please <a href="{% url 'login' %}">log in</a> to purchase this book.</p>
+      <p class="text-muted">
+        Please <a href="{% url 'login' %}">log in</a> to purchase this book.
+      </p>
     {% endif %}
   </div>
 {% endblock %}

@@ -1,9 +1,23 @@
 {% extends "base.html" %}
-{% block content %}
-  <h2>{{ course.title }}</h2>
-  <p>{{ course.description }}</p>
-  <p>Instructor: {{ course.instructor }}</p>
 
-  <a href="{% url 'courses:course_update' course.pk %}">Edit</a> |
-  <a href="{% url 'courses:course_delete' course.pk %}">Delete</a>
+{% block content %}
+  <div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">{{ course.title }}</h2>
+
+      {% if user.is_authenticated and user.role in "manager employee instructor" %}
+        <div>
+          <a href="{% url 'courses:course_update' course.pk %}" class="btn btn-sm btn-warning me-2">Edit</a>
+          <a href="{% url 'courses:course_delete' course.pk %}" class="btn btn-sm btn-danger">Delete</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <p><strong>Description:</strong> {{ course.description }}</p>
+    <p><strong>Instructor:</strong> {{ course.instructor.get_full_name|default:course.instructor }}</p>
+
+    <a href="{% url 'courses:course_list' %}" class="btn btn-secondary mt-3">← Back to Courses</a>
+
+  </div>
 {% endblock %}
