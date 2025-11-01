@@ -1,11 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Exams</h2>
-<ul>
-  {% for exam in exams %}
-    <li>{{ exam.title }} — <a href="{% url 'exams:take_exam' exam.id %}">Take Exam</a></li>
-  {% empty %}
-    <li>No exams available.</li>
-  {% endfor %}
-</ul>
+<div class="container mt-4">
+  <h2>Exams</h2>
+
+  {% if user.role in "manager employee instructor" %}
+    <div class="mb-3">
+      <a href="{% url 'exams:exam_create' %}" class="btn btn-primary">Add New Exam</a>
+    </div>
+  {% endif %}
+
+  <ul class="list-group">
+    {% for exam in exams %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>{{ exam.title }}</span>
+        <div>
+          <a href="{% url 'exams:take_exam' exam.id %}" class="btn btn-success btn-sm me-2">Take</a>
+
+          {% if user.role in "manager employee instructor" %}
+            <a href="{% url 'exams:exam_edit' exam.id %}" class="btn btn-warning btn-sm me-1">Edit</a>
+            <a href="{% url 'exams:exam_delete' exam.id %}" class="btn btn-danger btn-sm">Delete</a>
+          {% endif %}
+        </div>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No exams available.</li>
+    {% endfor %}
+  </ul>
+</div>
 {% endblock %}

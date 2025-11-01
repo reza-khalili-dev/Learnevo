@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-3">{% if object %}Edit Exam{% else %}Create New Exam{% endif %}</h3>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="card shadow-sm p-4">
+      <div class="row g-3">
+        {% for field in form %}
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+              <div class="text-danger small">{{ field.errors }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <h5>Questions</h5>
+      <p class="text-muted small">After saving the exam, you can add detailed questions and choices from the question manager.</p>
+      <!-- Optional: can include inline add form for questions in next step -->
+    </div>
+
+    <div class="mt-4 text-end">
+      <button type="submit" class="btn btn-primary px-4">Save Exam</button>
+      <a href="{% url 'exams:exam_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

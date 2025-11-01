@@ -1,24 +1,71 @@
 {% extends "base.html" %}
 {% block content %}
+  <div class="container mt-4">
+    <h2>{{ exam.title }}</h2>
+    <p>{{ exam.description }}</p>
 
-<h2>{{ exam.title }}</h2>
-<p>{{ exam.description }}</p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for q in questions %}
+        <div class="card mb-3 p-3">
+          <h5>Q{{ forloop.counter }}. {{ q.text }}</h5>
 
-<form method="post">
-    {% csrf_token %}
-    {% for question in questions %}
-        <div style="margin-bottom: 20px;">
-            <p><strong>{{ forloop.counter }}. {{ question.text }}</strong> ({{ question.points }} points)</p>
-            {% for choice in question.choices.all %}
-                <label>
-                    <input type="radio" name="{{ question.id }}" value="{{ choice.id }}">
-                    {{ choice.text }}
-                </label><br>
+          {% if q.qtype == "mcq" %}
+            {% for c in q.choices.all %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="{{ q.id }}" id="choice-{{ c.id }}" value="{{ c.id }}">
+                <label class="form-check-label" for="choice-{{ c.id }}">{{ c.text }}</label>
+              </div>
             {% endfor %}
+
+          {% elif q.qtype == "essay" %}
+            <textarea name="q_{{ q.id }}_text" class="form-control" rows="4"></textarea>
+
+          {% elif q.qtype == "audio_mcq" %}
+            {% if q.audio_file %}
+              <audio controls>
+                <source src="{{ q.audio_file.url }}" type="audio/mpeg">
+                Your browser does not support audio.
+              </audio>
+            {% endif %}
+            {% for c in q.choices.all %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="{{ q.id }}" id="choice-{{ c.id }}" value="{{ c.id }}">
+                <label class="form-check-label" for="choice-{{ c.id }}">{{ c.text }}</label>
+              </div>
+            {% endfor %}
+
+          {% elif q.qtype == "audio_essay" %}
+            {% if q.audio_file %}
+              <audio controls>
+                <source src="{{ q.audio_file.url }}" type="audio/mpeg">
+                Your browser does not support audio.
+              </audio>
+            {% endif %}
+            <textarea name="q_{{ q.id }}_text" class="form-control" rows="4"></textarea>
+
+          {% elif q.qtype == "image_mcq" %}
+            {% if q.image_file %}
+              <img src="{{ q.image_file.url }}" class="img-fluid mb-2" alt="Question image">
+            {% endif %}
+            {% for c in q.choices.all %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="{{ q.id }}" id="choice-{{ c.id }}" value="{{ c.id }}">
+                <label class="form-check-label" for="choice-{{ c.id }}">{{ c.text }}</label>
+              </div>
+            {% endfor %}
+
+          {% elif q.qtype == "image_essay" %}
+            {% if q.image_file %}
+              <img src="{{ q.image_file.url }}" class="img-fluid mb-2" alt="Question image">
+            {% endif %}
+            <textarea name="q_{{ q.id }}_text" class="form-control" rows="4"></textarea>
+
+          {% endif %}
         </div>
-    {% endfor %}
+      {% endfor %}
 
-    <button type="submit">Submit Exam</button>
-</form>
-
+      <button type="submit" class="btn btn-primary">Submit Exam</button>
+    </form>
+  </div>
 {% endblock %}
