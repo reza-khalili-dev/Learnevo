@@ -24,43 +24,44 @@
 
         <div class="collapse navbar-collapse" id="mainNavbar">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-            <!-- Books -->
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'books:book_list' %}">Books</a>
-            </li>
-
-            <!-- Courses -->
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'courses:course_list' %}">Courses</a>
-            </li>
-
-            <!-- Orders -->
-            {% if user.is_authenticated %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'orders:order_list' %}">My Orders</a>
-            </li>
-            {% endif %}
-
-            <!-- Dashboard Links (All Roles) -->
             {% if user.is_authenticated %}
               {% if user.role == "manager" %}
                 <li class="nav-item">
-                  <a class="nav-link text-danger" href="{% url 'users:admin-dashboard' %}">Admin Dashboard</a>
+                  <a class="nav-link text-danger fw-semibold" href="{% url 'users:admin-dashboard' %}">
+                    Admin Dashboard
+                  </a>
                 </li>
               {% elif user.role == "employee" %}
                 <li class="nav-item">
-                  <a class="nav-link text-warning" href="{% url 'users:employee-dashboard' %}">Employee Dashboard</a>
+                  <a class="nav-link text-warning fw-semibold" href="{% url 'users:employee-dashboard' %}">
+                    Employee Dashboard
+                  </a>
                 </li>
               {% elif user.role == "instructor" %}
                 <li class="nav-item">
-                  <a class="nav-link text-success" href="{% url 'users:instructor-dashboard' %}">Instructor Dashboard</a>
+                  <a class="nav-link text-success fw-semibold" href="{% url 'users:instructor-dashboard' %}">
+                    Instructor Dashboard
+                  </a>
                 </li>
               {% elif user.role == "student" %}
                 <li class="nav-item">
-                  <a class="nav-link text-primary" href="{% url 'users:student-dashboard' %}">Student Dashboard</a>
+                  <a class="nav-link text-primary fw-semibold" href="{% url 'users:student-dashboard' %}">
+                    Student Dashboard
+                  </a>
                 </li>
               {% endif %}
+            {% else %}
+              <!-- Navbar for unauthenticated users (public view) -->
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'users:home' %}">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">About</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Contact</a>
+              </li>
+              <!-- Add more public pages later like Pricing, Demo, etc. -->
             {% endif %}
           </ul>
 
