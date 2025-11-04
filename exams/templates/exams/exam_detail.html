@@ -31,14 +31,9 @@
                 <td>{{ q.get_qtype_display }}</td>
                 <td>{{ q.points }}</td>
                 <td>
-                    <a href="{% url 'exams:question_detail' q.id %}"
-                       class="btn btn-outline-info btn-sm">
-                        View
-                    </a>
-                    <a href="{% url 'exams:question_edit' q.id %}"
-                       class="btn btn-outline-warning btn-sm">
-                        Edit
-                    </a>
+                    <a href="{% url 'exams:question_detail' q.id %}" class="btn btn-outline-info btn-sm">View</a>
+                    <a href="{% url 'exams:question_edit' q.id %}" class="btn btn-outline-warning btn-sm">Edit</a>
+                    <a href="{% url 'exams:question_delete' q.id %}" class="btn btn-outline-danger btn-sm">Delete</a>
                 </td>
             </tr>
         {% empty %}

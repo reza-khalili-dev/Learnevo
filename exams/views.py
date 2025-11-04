@@ -1,9 +1,9 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse, reverse_lazy
 
 from .models import Exam, Question, Choice, StudentAnswer, ExamResult
 from .forms import ExamForm, QuestionForm, ChoiceForm
@@ -48,6 +48,15 @@ class ExamDetailView(LoginRequiredMixin, DetailView):
     template_name = "exams/exam_detail.html"
 
 
+class ExamDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Exam
+    template_name = "exams/exam_confirm_delete.html"
+    success_url = reverse_lazy("exams:exam_list")
+
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee", "instructor"]
+
+
 class QuestionCreateView(LoginRequiredMixin, CreateView):
     model = Question
     form_class = QuestionForm
@@ -75,6 +84,14 @@ class QuestionDetailView(LoginRequiredMixin, DetailView):
     model = Question
     template_name = "exams/question_detail.html"
     context_object_name = "question"
+    
+
+class QuestionDeleteView(LoginRequiredMixin, DeleteView):
+    model = Question
+    template_name = "exams/confirm_delete.html"
+
+    def get_success_url(self):
+        return reverse("exams:exam_detail", args=[self.object.exam.id])
 
 
 class ChoiceCreateView(LoginRequiredMixin, CreateView):
@@ -105,6 +122,13 @@ class ChoiceUpdateView(LoginRequiredMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx["question"] = self.object.question
         return ctx
+
+    def get_success_url(self):
+        return reverse("exams:question_detail", args=[self.object.question.id])
+
+class ChoiceDeleteView(LoginRequiredMixin, DeleteView):
+    model = Choice
+    template_name = "exams/confirm_delete.html"
 
     def get_success_url(self):
         return reverse("exams:question_detail", args=[self.object.question.id])

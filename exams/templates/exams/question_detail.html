@@ -22,8 +22,13 @@
                         <span class="badge bg-success ms-2">Correct</span>
                     {% endif %}
                 </span>
-                <a href="{% url 'exams:choice_edit' choice.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+
+                <div>
+                    <a href="{% url 'exams:choice_edit' choice.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <a href="{% url 'exams:choice_delete' choice.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                </div>
             </li>
+
         {% empty %}
             <li class="list-group-item">No choices yet</li>
         {% endfor %}

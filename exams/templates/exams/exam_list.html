@@ -11,8 +11,9 @@
   <td>{{ exam.title }}</td>
   <td>{{ exam.course }}</td>
   <td>
-    <a href="{% url 'exams:exam_detail' exam.id %}" class="btn btn-sm btn-info">View</a>
-    <a href="{% url 'exams:exam_edit' exam.id %}" class="btn btn-sm btn-warning">Edit</a>
+      <a href="{% url 'exams:exam_detail' exam.id %}" class="btn btn-sm btn-info">View</a>
+      <a href="{% url 'exams:exam_edit' exam.id %}" class="btn btn-sm btn-warning">Edit</a>
+      <a href="{% url 'exams:exam_delete' exam.id %}" class="btn btn-sm btn-danger">Delete</a>
   </td>
 </tr>
 {% endfor %}
