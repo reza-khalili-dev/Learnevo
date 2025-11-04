@@ -3,16 +3,16 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>{{ form.instance.pk|yesno:"Edit Exam,Create Exam" }}</h2>
+    <h2>{{ form.instance.pk|yesno:"Edit Question,Add Question" }}</h2>
     <hr>
 
     <form method="post">
         {% csrf_token %}
         {{ form|crispy }}
-        
+
         <div class="mt-3">
-            <button type="submit" class="btn btn-primary">Save Exam</button>
-            <a href="{% url 'exams:exam_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Question</button>
+            <a href="{{ exam.get_absolute_url }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>

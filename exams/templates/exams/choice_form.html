@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Add Choice for: {{ question.text }}</h3>
+    <hr>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a href="{% url 'exams:question_detail' question.id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

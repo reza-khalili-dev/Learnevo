@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Question Detail</h2>
+    <hr>
+
+    <h4>{{ question.text }}</h4>
+    <p><strong>Type:</strong> {{ question.get_qtype_display }}</p>
+    <p><strong>Points:</strong> {{ question.points }}</p>
+
+    <hr>
+    <h5>Choices</h5>
+
+    <ul class="list-group mb-3">
+        {% for choice in question.choices.all %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    {{ choice.text }}
+                    {% if choice.is_correct %}
+                        <span class="badge bg-success ms-2">Correct</span>
+                    {% endif %}
+                </span>
+                <a href="{% url 'exams:choice_edit' choice.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+            </li>
+        {% empty %}
+            <li class="list-group-item">No choices yet</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'exams:choice_add' question.id %}" class="btn btn-sm btn-success">+ Add Choice</a>
+    <a href="{% url 'exams:exam_detail' question.exam.id %}" class="btn btn-sm btn-secondary">Back</a>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>{{ exam.title }}</h3>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <p class="fw-bold">{{ question.text }}</p>
+
+            <form method="POST" action="{% url 'exams:submit_answer' exam.id question.id %}">
+                {% csrf_token %}
+
+                {% if question.qtype == "mcq" %}
+                    {% for c in choices %}
+                    <div class="form-check mb-2">
+                        <input type="radio" class="form-check-input" name="choice" value="{{ c.id }}" id="c{{c.id}}">
+                        <label for="c{{c.id}}" class="form-check-label">{{ c.text }}</label>
+                    </div>
+                    {% endfor %}
+
+                {% else %}
+                    <textarea name="text_answer" class="form-control" rows="4"></textarea>
+                {% endif %}
+
+                <button class="btn btn-primary mt-3">Next</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

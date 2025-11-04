@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Attempt Exam: {{ exam.title }}</h2>
+    <p class="text-muted">{{ exam.description }}</p>
+    <hr>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% for question in questions %}
+            <div class="mb-4 p-3 border rounded">
+                <p><strong>Q{{ forloop.counter }}:</strong> {{ question.text }}</p>
+                <p class="small text-muted">Mark: {{ question.mark }}</p>
+
+                {% if question.question_type == "mcq" %}
+                    {% for choice in question.choices.all %}
+                        <div class="form-check">
+                            <input 
+                                class="form-check-input"
+                                type="radio"
+                                name="question_{{ question.id }}"
+                                value="{{ choice.id }}"
+                                id="choice_{{ choice.id }}"
+                            >
+                            <label class="form-check-label" for="choice_{{ choice.id }}">
+                                {{ choice.text }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <textarea 
+                        name="question_{{ question.id }}" 
+                        class="form-control" rows="3"
+                        placeholder="Write your answer here..."
+                    ></textarea>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Submit Answers</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

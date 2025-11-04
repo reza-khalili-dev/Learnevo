@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'grades',
     'books',
     'orders',
+    'crispy_forms',
+    'crispy_bootstrap5',
     
     
     
@@ -135,5 +137,6 @@ LOGOUT_REDIRECT_URL = '/login/'
 LOGIN_URL = '/login/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 

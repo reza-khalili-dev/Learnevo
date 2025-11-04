@@ -1,30 +1,20 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="container mt-4">
-  <h2>Exams</h2>
+<h3>Exams</h3>
+<a class="btn btn-primary mb-3" href="{% url 'exams:exam_create' %}">+ Create Exam</a>
 
-  {% if user.role in "manager employee instructor" %}
-    <div class="mb-3">
-      <a href="{% url 'exams:exam_create' %}" class="btn btn-primary">Add New Exam</a>
-    </div>
-  {% endif %}
-
-  <ul class="list-group">
-    {% for exam in exams %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{{ exam.title }}</span>
-        <div>
-          <a href="{% url 'exams:take_exam' exam.id %}" class="btn btn-success btn-sm me-2">Take</a>
-
-          {% if user.role in "manager employee instructor" %}
-            <a href="{% url 'exams:exam_edit' exam.id %}" class="btn btn-warning btn-sm me-1">Edit</a>
-            <a href="{% url 'exams:exam_delete' exam.id %}" class="btn btn-danger btn-sm">Delete</a>
-          {% endif %}
-        </div>
-      </li>
-    {% empty %}
-      <li class="list-group-item">No exams available.</li>
-    {% endfor %}
-  </ul>
-</div>
+<table class="table">
+<tr><th>Title</th><th>Course</th><th>Actions</th></tr>
+{% for exam in exams %}
+<tr>
+  <td>{{ exam.title }}</td>
+  <td>{{ exam.course }}</td>
+  <td>
+    <a href="{% url 'exams:exam_detail' exam.id %}" class="btn btn-sm btn-info">View</a>
+    <a href="{% url 'exams:exam_edit' exam.id %}" class="btn btn-sm btn-warning">Edit</a>
+  </td>
+</tr>
+{% endfor %}
+</table>
 {% endblock %}
