@@ -1,5 +1,8 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h3>Exam Status Page</h3>
-{% if score %}<p>Score: {{ score }}</p>{% endif %}
+<div class="container mt-4">
+    <h3>Exam Finished: {{ exam.title }}</h3>
+    <p>Your Score: {{ score }}</p>
+</div>
 {% endblock %}

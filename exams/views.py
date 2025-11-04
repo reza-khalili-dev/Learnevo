@@ -1,11 +1,13 @@
-from django.shortcuts import get_object_or_404,render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy, reverse
-from .models import  Exam, Question, StudentAnswer, ExamResult
-from .forms import ExamForm, QuestionForm, ChoiceForm, Choice
+from django.urls import reverse
+
+from .models import Exam, Question, Choice, StudentAnswer, ExamResult
+from .forms import ExamForm, QuestionForm, ChoiceForm
+
 
 class ExamListView(LoginRequiredMixin, ListView):
     model = Exam
@@ -68,6 +70,7 @@ class QuestionUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse("exams:exam_detail", args=[self.object.exam.id])
 
+
 class QuestionDetailView(LoginRequiredMixin, DetailView):
     model = Question
     template_name = "exams/question_detail.html"
@@ -88,7 +91,7 @@ class ChoiceCreateView(LoginRequiredMixin, CreateView):
         ctx = super().get_context_data(**kwargs)
         ctx["question"] = get_object_or_404(Question, id=self.kwargs["question_id"])
         return ctx
-    
+
     def get_success_url(self):
         return reverse("exams:question_detail", args=[self.kwargs["question_id"]])
 
@@ -102,10 +105,14 @@ class ChoiceUpdateView(LoginRequiredMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx["question"] = self.object.question
         return ctx
-    
+
     def get_success_url(self):
         return reverse("exams:question_detail", args=[self.object.question.id])
-    
+
+
+# =============================
+# Student exam views
+# =============================
 
 @login_required
 def start_exam(request, pk):
@@ -120,12 +127,10 @@ def start_exam(request, pk):
     if now < exam.start_time or now > exam.end_time:
         return render(request, "exams/out_of_time.html", {"exam": exam})
 
-    first_q = exam.questions.order_by("order").first()
+    first_q = exam.questions.order_by("id").first()
     if not first_q:
-        # اگر سوالی وجود ندارد
         return render(request, "exams/no_questions.html", {"exam": exam})
 
-    # فقط question_id را ارسال کن، order لازم نیست
     return redirect("exams:take_question", exam_id=exam.id, question_id=first_q.id)
 
 
@@ -134,25 +139,27 @@ def take_question(request, exam_id, question_id):
     exam = get_object_or_404(Exam, id=exam_id)
     question = get_object_or_404(Question, id=question_id, exam=exam)
 
-    # همه سوالات مربوط به این امتحان
-    questions = list(Question.objects.filter(exam=exam).order_by("id"))
-
-    # گرفتن index سؤال فعلی
+    questions = list(exam.questions.order_by("id"))
     current_index = questions.index(question)
-
-    # انتخاب سوال بعدی
     next_question = questions[current_index + 1] if current_index + 1 < len(questions) else None
 
     if request.method == "POST":
         selected_choice = request.POST.get("choice")
         text_answer = request.POST.get("text_answer")
 
-        # TODO: Save StudentAnswer here
+        StudentAnswer.objects.update_or_create(
+            student=request.user,
+            question=question,
+            defaults={
+                "choice_id": selected_choice,
+                "text_answer": text_answer
+            }
+        )
 
         if next_question:
-            return redirect("exams:take_question", exam.id, next_question.id)
+            return redirect("exams:take_question", exam_id=exam.id, question_id=next_question.id)
         else:
-            return redirect("exams:exam_detail", exam.id)
+            return redirect("exams:finish_exam", pk=exam.id)
 
     return render(request, "exams/take_question.html", {
         "exam": exam,
@@ -161,14 +168,11 @@ def take_question(request, exam_id, question_id):
     })
 
 
-
 @login_required
 def submit_answer(request, exam_id, question_id):
-    if request.method != "POST":
-        return redirect("exams:take_question", exam_id=exam_id, order=1)
+    question = get_object_or_404(Question, id=question_id, exam_id=exam_id)
 
-    question = get_object_or_404(Question, id=question_id)
-
+    # ذخیره یا بروزرسانی پاسخ دانش‌آموز
     StudentAnswer.objects.update_or_create(
         student=request.user,
         question=question,
@@ -178,28 +182,30 @@ def submit_answer(request, exam_id, question_id):
         }
     )
 
-    next_q = Question.objects.filter(exam_id=exam_id, order__gt=question.order).order_by("order").first()
-
+    # پیدا کردن سوال بعدی
+    next_q = Question.objects.filter(exam_id=exam_id, id__gt=question.id).order_by("id").first()
     if next_q:
-        return redirect("exams:take_question", exam_id=exam_id, order=next_q.order)
+        return redirect("exams:take_question", exam_id=exam_id, question_id=next_q.id)
     else:
         return redirect("exams:finish_exam", pk=exam_id)
-
 
 @login_required
 def finish_exam(request, pk):
     exam = get_object_or_404(Exam, pk=pk)
 
-    correct = StudentAnswer.objects.filter(
+    # تعداد پاسخ‌های صحیح
+    correct_count = StudentAnswer.objects.filter(
         student=request.user,
         question__exam=exam,
         choice__is_correct=True
     ).count()
 
-    ExamResult.objects.update_or_create(
+    # ذخیره یا بروزرسانی نتیجه
+    result, created = ExamResult.objects.update_or_create(
         student=request.user,
         exam=exam,
-        defaults={"score": correct}
+        defaults={"score": correct_count}
     )
 
-    return render(request, "exams/finished.html", {"exam": exam, "score": correct})
+    return render(request, "exams/finished.html", {"exam": exam, "score": correct_count})
+
