@@ -172,7 +172,7 @@ def take_question(request, exam_id, question_id):
 def submit_answer(request, exam_id, question_id):
     question = get_object_or_404(Question, id=question_id, exam_id=exam_id)
 
-    # ذخیره یا بروزرسانی پاسخ دانش‌آموز
+
     StudentAnswer.objects.update_or_create(
         student=request.user,
         question=question,
@@ -182,7 +182,7 @@ def submit_answer(request, exam_id, question_id):
         }
     )
 
-    # پیدا کردن سوال بعدی
+
     next_q = Question.objects.filter(exam_id=exam_id, id__gt=question.id).order_by("id").first()
     if next_q:
         return redirect("exams:take_question", exam_id=exam_id, question_id=next_q.id)
@@ -193,14 +193,14 @@ def submit_answer(request, exam_id, question_id):
 def finish_exam(request, pk):
     exam = get_object_or_404(Exam, pk=pk)
 
-    # تعداد پاسخ‌های صحیح
+
     correct_count = StudentAnswer.objects.filter(
         student=request.user,
         question__exam=exam,
         choice__is_correct=True
     ).count()
 
-    # ذخیره یا بروزرسانی نتیجه
+
     result, created = ExamResult.objects.update_or_create(
         student=request.user,
         exam=exam,

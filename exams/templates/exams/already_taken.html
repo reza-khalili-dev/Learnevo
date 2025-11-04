@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>Exam Status Page</h3>
-{% if score %}<p>Score: {{ score }}</p>{% endif %}
+<div class="container mt-4">
+    <h3>Exam Already Taken</h3>
+    <p>You have already completed the exam: <strong>{{ exam.title }}</strong>.</p>
+    <p>You cannot retake this exam.</p>
+    <a href="{% url 'exams:exam_list' %}" class="btn btn-secondary mt-3">Back to Exams</a>
+</div>
 {% endblock %}
