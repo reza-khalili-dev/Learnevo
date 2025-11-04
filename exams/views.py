@@ -117,12 +117,17 @@ class ChoiceUpdateView(LoginRequiredMixin, UpdateView):
 @login_required
 def start_exam(request, pk):
     exam = get_object_or_404(Exam, pk=pk)
+    
+    exam_result, created = ExamResult.objects.get_or_create(
+        student=request.user,
+        exam=exam,
+        defaults={'start_time': timezone.now()}
+    )
 
-    # student already took exam?
-    if ExamResult.objects.filter(student=request.user, exam=exam).exists():
-        return render(request, "exams/already_taken.html", {"exam": exam})
+    if not created and exam_result.start_time is None:
+        exam_result.start_time = timezone.now()
+        exam_result.save()
 
-    # time check
     now = timezone.now()
     if now < exam.start_time or now > exam.end_time:
         return render(request, "exams/out_of_time.html", {"exam": exam})
@@ -138,15 +143,18 @@ def start_exam(request, pk):
 def take_question(request, exam_id, question_id):
     exam = get_object_or_404(Exam, id=exam_id)
     question = get_object_or_404(Question, id=question_id, exam=exam)
+    exam_result = get_object_or_404(ExamResult, exam=exam, student=request.user)
 
-    questions = list(exam.questions.order_by("id"))
+    remaining_time = (exam_result.start_time + timezone.timedelta(minutes=exam.duration) - timezone.now()).total_seconds()
+    remaining_time = max(0, int(remaining_time))
+
+    questions = list(Question.objects.filter(exam=exam).order_by("id"))
     current_index = questions.index(question)
     next_question = questions[current_index + 1] if current_index + 1 < len(questions) else None
 
     if request.method == "POST":
         selected_choice = request.POST.get("choice")
         text_answer = request.POST.get("text_answer")
-
         StudentAnswer.objects.update_or_create(
             student=request.user,
             question=question,
@@ -155,7 +163,6 @@ def take_question(request, exam_id, question_id):
                 "text_answer": text_answer
             }
         )
-
         if next_question:
             return redirect("exams:take_question", exam_id=exam.id, question_id=next_question.id)
         else:
@@ -165,6 +172,7 @@ def take_question(request, exam_id, question_id):
         "exam": exam,
         "question": question,
         "choices": question.choices.all(),
+        "remaining_time": remaining_time
     })
 
 

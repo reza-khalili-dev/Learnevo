@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
-from courses.models import Course  # ensure courses app exists
+from courses.models import Course 
+from django.utils import timezone
 
 
 class Exam(models.Model):
@@ -91,6 +92,8 @@ class StudentAnswer(models.Model):
         return f"{self.student.email} → {self.question.text[:30]}..."
 
 
+
+
 class ExamResult(models.Model):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -102,6 +105,7 @@ class ExamResult(models.Model):
     score = models.FloatField(default=0)
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    start_time = models.DateTimeField(null=True, blank=True)  # اضافه شد
 
     class Meta:
         unique_together = ("student", "exam")

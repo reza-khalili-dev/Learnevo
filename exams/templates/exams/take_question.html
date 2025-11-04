@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-4">
     <h3>{{ exam.title }}</h3>
+
+    <!-- Timer -->
+    <div class="alert alert-warning">
+        Time Remaining: 
+        <span id="timer" data-time="{{ remaining_time }}" data-exam="{{ exam.id }}"></span>
+    </div>
 
     <div class="card mt-3">
         <div class="card-body">
@@ -19,7 +26,6 @@
                         <label for="c{{c.id}}" class="form-check-label">{{ c.text }}</label>
                     </div>
                     {% endfor %}
-
                 {% else %}
                     <textarea name="text_answer" class="form-control" rows="4"></textarea>
                 {% endif %}
@@ -29,4 +35,7 @@
         </div>
     </div>
 </div>
+
+<!-- Load external JS for countdown timer -->
+<script src="{% static 'exams/js/exam_timer.js' %}"></script>
 {% endblock %}
