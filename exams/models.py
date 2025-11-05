@@ -105,7 +105,7 @@ class ExamResult(models.Model):
     score = models.FloatField(default=0)
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    start_time = models.DateTimeField(null=True, blank=True)  # اضافه شد
+    start_time = models.DateTimeField(null=True, blank=True) 
 
     class Meta:
         unique_together = ("student", "exam")

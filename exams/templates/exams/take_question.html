@@ -1,12 +1,10 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
 {% load static %}
 
 {% block content %}
 <div class="container mt-4">
     <h3>{{ exam.title }}</h3>
 
-    <!-- Timer -->
     <div class="alert alert-warning">
         Time Remaining: 
         <span id="timer" data-time="{{ remaining_time }}" data-exam="{{ exam.id }}"></span>
@@ -14,28 +12,46 @@
 
     <div class="card mt-3">
         <div class="card-body">
+
             <p class="fw-bold">{{ question.text }}</p>
+
+            {% if question.audio_file %}
+            <audio controls class="mb-3">
+                <source src="{{ question.audio_file.url }}">
+            </audio>
+            {% endif %}
+
+            {% if question.image_file %}
+            <img src="{{ question.image_file.url }}" class="img-fluid rounded mb-3" style="max-width:350px;">
+            {% endif %}
 
             <form method="POST" action="{% url 'exams:submit_answer' exam.id question.id %}">
                 {% csrf_token %}
 
-                {% if question.qtype == "mcq" %}
+                {% if question.qtype in "mcq audio_mcq image_mcq" %}
                     {% for c in choices %}
                     <div class="form-check mb-2">
                         <input type="radio" class="form-check-input" name="choice" value="{{ c.id }}" id="c{{c.id}}">
                         <label for="c{{c.id}}" class="form-check-label">{{ c.text }}</label>
                     </div>
                     {% endfor %}
+                
                 {% else %}
-                    <textarea name="text_answer" class="form-control" rows="4"></textarea>
+                    <textarea name="text_answer" class="form-control" rows="5" placeholder="Write your answer here..."></textarea>
                 {% endif %}
 
-                <button class="btn btn-primary mt-3">Next</button>
+                <button class="btn btn-primary mt-3">
+                    {% if next_question %}
+                        Next
+                    {% else %}
+                        Submit Exam
+                    {% endif %}
+                </button>
             </form>
+
         </div>
     </div>
 </div>
 
-<!-- Load external JS for countdown timer -->
 <script src="{% static 'exams/js/exam_timer.js' %}"></script>
 {% endblock %}

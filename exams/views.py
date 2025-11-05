@@ -181,27 +181,33 @@ def take_question(request, exam_id, question_id):
     next_question = questions[current_index + 1] if current_index + 1 < len(questions) else None
 
     if request.method == "POST":
-        selected_choice = request.POST.get("choice")
-        text_answer = request.POST.get("text_answer")
-        StudentAnswer.objects.update_or_create(
-            student=request.user,
-            question=question,
-            defaults={
-                "choice_id": selected_choice,
-                "text_answer": text_answer
-            }
-        )
+        if question.qtype in ["mcq", "audio_mcq", "image_mcq"]:
+            selected_choice = request.POST.get("choice")
+            StudentAnswer.objects.update_or_create(
+                student=request.user,
+                question=question,
+                defaults={"choice_id": selected_choice, "text_answer": None}
+            )
+        else:
+            text_answer = request.POST.get("text_answer")
+            StudentAnswer.objects.update_or_create(
+                student=request.user,
+                question=question,
+                defaults={"text_answer": text_answer, "choice_id": None}
+            )
+
         if next_question:
             return redirect("exams:take_question", exam_id=exam.id, question_id=next_question.id)
-        else:
-            return redirect("exams:finish_exam", pk=exam.id)
+        return redirect("exams:finish_exam", pk=exam.id)
 
     return render(request, "exams/take_question.html", {
         "exam": exam,
         "question": question,
         "choices": question.choices.all(),
-        "remaining_time": remaining_time
+        "remaining_time": remaining_time,
+        "next_question": next_question,
     })
+
 
 
 @login_required
