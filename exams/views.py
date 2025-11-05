@@ -47,7 +47,11 @@ class ExamDetailView(LoginRequiredMixin, DetailView):
     model = Exam
     template_name = "exams/exam_detail.html"
 
-
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.role == "student":
+            return redirect("exams:exam_list")
+        return super().dispatch(request, *args, **kwargs)
+    
 class ExamDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Exam
     template_name = "exams/exam_confirm_delete.html"

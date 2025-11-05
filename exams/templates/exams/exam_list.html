@@ -2,18 +2,53 @@
 
 {% block content %}
 <h3>Exams</h3>
+
+{% if user.role in "manager instructor employee" %}
 <a class="btn btn-primary mb-3" href="{% url 'exams:exam_create' %}">+ Create Exam</a>
+{% endif %}
 
 <table class="table">
-<tr><th>Title</th><th>Course</th><th>Actions</th></tr>
+<tr>
+    <th>Title</th>
+    <th>Course</th>
+    <th>Actions</th>
+</tr>
+
 {% for exam in exams %}
 <tr>
   <td>{{ exam.title }}</td>
   <td>{{ exam.course }}</td>
   <td>
-      <a href="{% url 'exams:exam_detail' exam.id %}" class="btn btn-sm btn-info">View</a>
-      <a href="{% url 'exams:exam_edit' exam.id %}" class="btn btn-sm btn-warning">Edit</a>
-      <a href="{% url 'exams:exam_delete' exam.id %}" class="btn btn-sm btn-danger">Delete</a>
+
+    {% if user.role in "manager instructor employee" %}
+        <a href="{% url 'exams:exam_detail' exam.id %}" class="btn btn-sm btn-info">View</a>
+        <a href="{% url 'exams:exam_edit' exam.id %}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{% url 'exams:exam_delete' exam.id %}" class="btn btn-sm btn-danger">Delete</a>
+
+    {% elif user.role == "student" %}
+
+        {% with student_results=exam.results.all %}
+            {% if student_results|length > 0 %}
+                {% for r in student_results %}
+                    {% if r.student == user %}
+                        {% if r.score > 0 %}
+                            <span class="badge bg-success">Completed</span>
+                        {% else %}
+                            <a href="{% url 'exams:take_question' exam.id exam.questions.first.id %}"
+                               class="btn btn-sm btn-secondary">
+                                Continue
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <a href="{% url 'exams:start_exam' exam.id %}" class="btn btn-sm btn-success">
+                    Start Exam
+                </a>
+            {% endif %}
+        {% endwith %}
+
+    {% endif %}
   </td>
 </tr>
 {% endfor %}
