@@ -4,9 +4,11 @@ from .models import Exam, Question, Choice
 class ExamForm(forms.ModelForm):
     class Meta:
         model = Exam
-        fields = ["title", "description", "course", "start_time",
-                  "end_time", "duration", "total_marks"]
-
+        fields = ["course", "title", "description", "duration", "start_time", "end_time"]
+        widgets = {
+            "start_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "end_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
