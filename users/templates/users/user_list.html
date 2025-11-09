@@ -24,7 +24,11 @@
         {% for u in users %}
           <tr>
             <td>{{ forloop.counter }}</td>
-            <td>{{ u.first_name }} {{ u.last_name }}</td>
+            <td>
+              <a href="{% url 'users:profile_detail' u.profile.id %}" class="text-decoration-none fw-bold">
+                {{ u.first_name }} {{ u.last_name }}
+              </a>
+            </td>
             <td>{{ u.email }}</td>
             <td>{{ u.phone_number|default:"—" }}</td>
             <td>

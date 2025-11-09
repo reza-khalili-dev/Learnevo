@@ -58,7 +58,7 @@ def user_profile_upload_path(instance, filename):
 
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
-    image = models.ImageField(upload_to=user_profile_upload_path, default="profiles/default.jpg")
+    image = models.ImageField(upload_to=user_profile_upload_path, default="profiles/images/default-avatar.png")
     bio = models.TextField(blank=True, null=True)
     enrolled_courses = models.ManyToManyField(Course, blank=True, related_name="enrolled_users")
 

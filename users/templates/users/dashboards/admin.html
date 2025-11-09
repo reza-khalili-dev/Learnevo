@@ -103,46 +103,70 @@
         </div>
       </div>
 
-      <!-- Recent lists -->
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="card p-3 shadow-sm">
-            <h6>Recent Users</h6>
-            <ul class="list-group list-group-flush">
-              {% for u in recent_users %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="fw-bold">{{ u.first_name }} {{ u.last_name }}</div>
-                    <div class="small text-muted">{{ u.email }}</div>
-                  </div>
-                  <div class="text-muted small">{{ u.date_joined|date:"Y-m-d" }}</div>
-                </li>
-              {% empty %}
-                <li class="list-group-item">No users yet.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
+<!-- Recent lists -->
+<div class="row g-3">
+  <!-- Recent Users -->
+  <div class="col-md-6">
+    <div class="card p-3 shadow-sm" style="max-height: 300px; overflow-y: auto;">
+      <h6 class="mb-3">Recent Users</h6>
+      <ul class="list-group list-group-flush">
+        {% for u in recent_users %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <img src="{% if u.profile.image %}{{ u.profile.image.url }}{% else %}/media/profiles/images/default-avatar.png{% endif %}"
+                  alt="Profile"
+                  class="rounded-circle me-2"
+                  width="40" height="40">
+              <div>
+                <div class="fw-bold">
+                  <a href="{% url 'users:profile_detail' u.profile.id %}" class="text-decoration-none">
+                    {{ u.first_name }} {{ u.last_name }}
+                  </a>
+                </div>
+                <div class="small text-muted">{{ u.email }}</div>
+              </div>
+            </div>
+            <div class="text-muted small">{{ u.date_joined|date:"Y-m-d" }}</div>
+          </li>
+        {% empty %}
+          <li class="list-group-item">No users yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
 
-        <div class="col-md-6">
-          <div class="card p-3 shadow-sm">
-            <h6>Recent Instructors</h6>
-            <ul class="list-group list-group-flush">
-              {% for ins in recent_instructors %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="fw-bold">{{ ins.first_name }} {{ ins.last_name }}</div>
-                    <div class="small text-muted">{{ ins.email }}</div>
-                  </div>
-                  <div class="text-muted small">{{ ins.date_joined|date:"Y-m-d" }}</div>
-                </li>
-              {% empty %}
-                <li class="list-group-item">No instructors yet.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-      </div>
+  <!-- Recent Instructors -->
+  <div class="col-md-6">
+    <div class="card p-3 shadow-sm" style="max-height: 300px; overflow-y: auto;">
+      <h6 class="mb-3">Recent Instructors</h6>
+      <ul class="list-group list-group-flush">
+        {% for ins in recent_instructors %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <img src="{% if ins.profile.image %}{{ ins.profile.image.url }}{% else %}/media/profiles/images/default-avatar.png{% endif %}"
+                  alt="Profile"
+                  class="rounded-circle me-2"
+                  width="40" height="40">
+
+              <div>
+                <div class="fw-bold">
+                  <a href="{% url 'users:profile_detail' ins.profile.id %}" class="text-decoration-none">
+                    {{ ins.first_name }} {{ ins.last_name }}
+                  </a>
+                </div>
+                <div class="small text-muted">{{ ins.email }}</div>
+              </div>
+            </div>
+            <div class="text-muted small">{{ ins.date_joined|date:"Y-m-d" }}</div>
+          </li>
+        {% empty %}
+          <li class="list-group-item">No instructors yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
 
       <!-- Classes summary -->
       <div class="row g-3 mt-3">
