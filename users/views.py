@@ -122,9 +122,11 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
+        # Counts
         ctx["user_count"] = User.objects.count()
         ctx["student_count"] = User.objects.filter(role="student").count()
         ctx["instructor_count"] = User.objects.filter(role="instructor").count()
+        ctx["employee_count"] = User.objects.filter(role="employee").count()
         ctx["manager_count"] = User.objects.filter(role="manager").count()
 
         ctx["course_count"] = Course.objects.count() if Course is not None else 0
@@ -132,16 +134,19 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         ctx["order_count"] = Order.objects.count() if Order is not None else 0
         ctx["exam_count"] = Exam.objects.count() if Exam is not None else 0
 
+        # Roles pie chart
         ctx["roles_pie"] = {
             "students": ctx["student_count"],
             "instructors": ctx["instructor_count"],
+            "employees": ctx["employee_count"],
             "managers": ctx["manager_count"],
         }
 
+        # Monthly stats
         now = timezone.now()
         monthly = []
         labels = []
-        for i in range(5, -1, -1): 
+        for i in range(5, -1, -1):
             start = (now.replace(day=1) - timezone.timedelta(days=30*i)).replace(day=1)
             end = (start + timezone.timedelta(days=31)).replace(day=1)
             count = User.objects.filter(date_joined__gte=start, date_joined__lt=end).count()
@@ -150,8 +155,14 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         ctx["monthly_labels"] = labels
         ctx["monthly_data"] = monthly
 
+        # Recent users
         ctx["recent_users"] = User.objects.order_by("-date_joined")[:8]
         ctx["recent_instructors"] = User.objects.filter(role="instructor").order_by("-date_joined")[:8]
+        ctx["recent_students"] = User.objects.filter(role="student").order_by("-date_joined")[:8]
+        ctx["recent_employees"] = User.objects.filter(role="employee").order_by("-date_joined")[:8]
+
+        return ctx
+        
 
         classes = []
         if Classroom is not None:
