@@ -37,13 +37,21 @@ class ClassAdmin(admin.ModelAdmin):
 
 
 
+@admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "students":
-            kwargs["queryset"] = CustomUser.objects.filter(role="student")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+    list_display = ("title", "classroom", "start_time", "end_time", "duration_minutes", "created_at")
+    list_filter = ("classroom", "start_time")
+    search_fields = ("title", "classroom__title")
+    ordering = ("-start_time",)
+    readonly_fields = ("created_at", "updated_at")
 
-admin.site.register(Session, SessionAdmin)
+    def duration_minutes(self, obj):
+        if obj.start_time and obj.end_time:
+            duration = obj.end_time - obj.start_time
+            return f"{int(duration.total_seconds() // 60)} min"
+        return "-"
+    duration_minutes.short_description = "Duration"
+
 
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
