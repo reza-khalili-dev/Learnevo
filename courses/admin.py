@@ -5,6 +5,14 @@ from users.models import CustomUser
 
 # Register your models here.
 
+# Session Inline
+class SessionInline(admin.TabularInline):  
+    model = Session
+    extra = 0 
+    fields = ('title', 'description', 'start_time', 'end_time')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    
 class CourseAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "instructor":
@@ -18,8 +26,9 @@ class ClassAdmin(admin.ModelAdmin):
     list_display = ('title', 'course', 'start_date', 'end_date')
     list_filter = ('course', 'start_date')
     search_fields = ('title', 'course__title')
-
     filter_horizontal = ('students',)
+    
+    inlines = [SessionInline]  
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "students":
@@ -57,3 +66,4 @@ class SubmissionAdmin(admin.ModelAdmin):
     list_filter = ("assignment__course",)
     search_fields = ("student__email", "student__first_name", "student__last_name", "assignment__title")
     readonly_fields = ("submitted_at", "graded_at")
+    
