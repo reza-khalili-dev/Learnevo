@@ -19,6 +19,13 @@ class ClassAdmin(admin.ModelAdmin):
     list_filter = ('course', 'start_date')
     search_fields = ('title', 'course__title')
 
+    filter_horizontal = ('students',)
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "students":
+            kwargs["queryset"] = CustomUser.objects.filter(role="student")
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
 
 
 class SessionAdmin(admin.ModelAdmin):
