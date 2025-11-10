@@ -113,16 +113,18 @@ class InstructorDashboardView(LoginRequiredMixin, RoleRequiredMixin, TemplateVie
     template_name = 'users/dashboards/instructor.html'
 
 class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-
     template_name = "users/dashboards/admin.html"
 
     def test_func(self):
+        #just manager & employee 
         return getattr(self.request.user, "role", None) in ["manager", "employee"]
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
+        # ----------------------
         # Counts
+        # ----------------------
         ctx["user_count"] = User.objects.count()
         ctx["student_count"] = User.objects.filter(role="student").count()
         ctx["instructor_count"] = User.objects.filter(role="instructor").count()
@@ -134,19 +136,25 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         ctx["order_count"] = Order.objects.count() if Order is not None else 0
         ctx["exam_count"] = Exam.objects.count() if Exam is not None else 0
 
+        # ----------------------
         # Roles pie chart
+        # ----------------------
         ctx["roles_pie"] = {
             "students": ctx["student_count"],
             "instructors": ctx["instructor_count"],
             "employees": ctx["employee_count"],
             "managers": ctx["manager_count"],
         }
+        ctx["roles_pie_labels"] = list(ctx["roles_pie"].keys())
+        ctx["roles_pie_values"] = list(ctx["roles_pie"].values())
 
-        # Monthly stats
+        # ----------------------
+        # Monthly signups
+        # ----------------------
         now = timezone.now()
         monthly = []
         labels = []
-        for i in range(5, -1, -1):
+        for i in range(5, -1, -1):  # 6 month ago
             start = (now.replace(day=1) - timezone.timedelta(days=30*i)).replace(day=1)
             end = (start + timezone.timedelta(days=31)).replace(day=1)
             count = User.objects.filter(date_joined__gte=start, date_joined__lt=end).count()
@@ -155,15 +163,17 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         ctx["monthly_labels"] = labels
         ctx["monthly_data"] = monthly
 
+        # ----------------------
         # Recent users
+        # ----------------------
         ctx["recent_users"] = User.objects.order_by("-date_joined")[:8]
         ctx["recent_instructors"] = User.objects.filter(role="instructor").order_by("-date_joined")[:8]
         ctx["recent_students"] = User.objects.filter(role="student").order_by("-date_joined")[:8]
         ctx["recent_employees"] = User.objects.filter(role="employee").order_by("-date_joined")[:8]
 
-        return ctx
-        
-
+        # ----------------------
+        # Recent classes
+        # ----------------------
         classes = []
         if Classroom is not None:
             classrooms = Classroom.objects.all().order_by("-id")[:6]
@@ -174,20 +184,20 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                     "students_count": getattr(cl, "students", []).count() if hasattr(cl, "students") else 0,
                     "avg_grade": None,
                 }
+
                 if Grade is not None:
                     try:
-                        g_qs = Grade.objects.filter(exam__course__classes=cl) 
+                        g_qs = Grade.objects.filter(exam__course__classes=cl)
                         avg = g_qs.aggregate_avg = g_qs.aggregate(models.Avg("score")).get("score__avg")
                         cl_info["avg_grade"] = round(avg, 2) if avg else None
                     except Exception:
                         cl_info["avg_grade"] = None
+
                 classes.append(cl_info)
         ctx["classes"] = classes
 
-        ctx["roles_pie_labels"] = list(ctx["roles_pie"].keys())
-        ctx["roles_pie_values"] = list(ctx["roles_pie"].values())
-
         return ctx
+
 
 
 class ProfileEditForm(forms.ModelForm):

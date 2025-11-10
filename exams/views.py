@@ -67,9 +67,14 @@ class QuestionCreateView(LoginRequiredMixin, CreateView):
     template_name = "exams/question_form.html"
 
     def form_valid(self, form):
-        exam_id = self.kwargs["exam_id"]
-        form.instance.exam_id = exam_id
+        exam = get_object_or_404(Exam, id=self.kwargs["exam_id"])
+        form.instance.exam = exam
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["exam"] = get_object_or_404(Exam, id=self.kwargs["exam_id"])
+        return context
 
     def get_success_url(self):
         return reverse("exams:exam_detail", args=[self.kwargs["exam_id"]])
@@ -80,8 +85,14 @@ class QuestionUpdateView(LoginRequiredMixin, UpdateView):
     form_class = QuestionForm
     template_name = "exams/question_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["exam"] = self.object.exam
+        return context
+
     def get_success_url(self):
         return reverse("exams:exam_detail", args=[self.object.exam.id])
+
 
 
 class QuestionDetailView(LoginRequiredMixin, DetailView):

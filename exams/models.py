@@ -46,10 +46,9 @@ class Question(models.Model):
     audio_file = models.FileField(upload_to='exam_media/audio/', null=True, blank=True)
     image_file = models.ImageField(upload_to='exam_media/images/', null=True, blank=True)
 
-    order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ['order', 'id']
+        ordering = ['id']
 
     def __str__(self):
         return f"{self.text[:60]}..."

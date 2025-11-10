@@ -12,7 +12,7 @@ class ExamForm(forms.ModelForm):
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
-        fields = ["text", "qtype", "points", "audio_file", "image_file", "order"]
+        fields = ["text", "qtype", "points", "audio_file", "image_file"]
 
 class ChoiceForm(forms.ModelForm):
     class Meta:
