@@ -40,26 +40,47 @@ class Classroom(models.Model):
 
 
 class Session(models.Model):
-    classroom = models.ForeignKey("Classroom",on_delete=models.CASCADE,related_name="sessions")
-    
+    classroom = models.ForeignKey(
+        "Classroom",
+        on_delete=models.CASCADE,
+        related_name="sessions"
+    )
+
     title = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
 
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        if self.end_time <= self.start_time:
-            raise ValidationError(_("End time must be after start time."))
+        super().clean()
 
-        overlapping_sessions = Session.objects.filter(classroom=self.classroom).exclude(pk=self.pk)
+        if self.start_time and self.end_time:
+            if self.end_time <= self.start_time:
+                raise ValidationError(_("End time must be after start time."))
 
-        for session in overlapping_sessions:
-            if (self.start_time < session.end_time) and (self.end_time > session.start_time):
-                raise ValidationError(_(f"Session overlaps with another session: {session.title} "f"({session.start_time} - {session.end_time})"))
+            if self.classroom and self.classroom.start_date and self.classroom.end_date:
+                if not (self.classroom.start_date <= self.start_time.date() <= self.classroom.end_date):
+                    raise ValidationError(_("Session start time must be within the classroom date range."))
+                if not (self.classroom.start_date <= self.end_time.date() <= self.classroom.end_date):
+                    raise ValidationError(_("Session end time must be within the classroom date range."))
+
+            overlapping_sessions = (
+                Session.objects
+                .filter(classroom=self.classroom)
+                .exclude(pk=self.pk)
+                .filter(
+                    start_time__lt=self.end_time,
+                    end_time__gt=self.start_time
+                )
+            )
+
+            if overlapping_sessions.exists():
+                overlaps = ", ".join([s.title for s in overlapping_sessions])
+                raise ValidationError(_(f"Session overlaps with other sessions: {overlaps}"))
 
     class Meta:
         ordering = ["start_time"]
