@@ -88,15 +88,25 @@ class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     fields = ['course', 'title', 'start_date', 'end_date', 'capacity']
     template_name = 'courses/class_form.html'
 
+
+
+
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
-        if getattr(self.request.user, 'role', None) == 'Instructor':
+        user_role = getattr(self.request.user, 'role', '').lower()
+        
+        if user_role == 'instructor':
             form.fields['course'].queryset = Course.objects.filter(instructor=self.request.user)
+
+        elif user_role in ['manager', 'employee']:
+            form.fields['course'].queryset = Course.objects.all()
         else:
             form.fields['course'].queryset = Course.objects.none()
+
         return form
+
     def test_func(self):
-        return getattr(self.request.user, 'role', None) == 'Instructor'
+        return getattr(self.request.user, 'role', None) in ['instructor', 'manager', 'employee']
     
     def form_valid(self, form):
         course = form.cleaned_data.get('course')
