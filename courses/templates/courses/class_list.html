@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Classes</h2>
+    <a href="{% url 'courses:class_create' %}" class="btn btn-primary mb-3">Create New Class</a>
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Title</th>
+                <th>Course</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Capacity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for class_obj in classes %}
+            <tr>
+                <td>{{ class_obj.title }}</td>
+                <td>{{ class_obj.course.title }}</td>
+                <td>{{ class_obj.start_date }}</td>
+                <td>{{ class_obj.end_date }}</td>
+                <td>{{ class_obj.capacity }}</td>
+                <td>
+                    <a href="{% url 'courses:class_detail' class_obj.pk %}" class="btn btn-sm btn-info">View</a>
+                    <a href="{% url 'courses:class_update' class_obj.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'courses:class_delete' class_obj.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="text-center">No classes found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -75,9 +75,9 @@ class CourseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 class ClassListView(LoginRequiredMixin, ListView):
     model = Classroom
-    template_name = 'courses/session_list.html'
+    template_name = 'courses/class_list.html'
     context_object_name = 'classes'
-
+    
 class ClassDetailView(LoginRequiredMixin, DetailView):
     model = Classroom
     template_name = 'courses/class_detail.html'
