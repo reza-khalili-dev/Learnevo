@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance - {{ classroom.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Attendance for {{ classroom.title }}</h2>
+    <p><strong>Instructor:</strong> {{ instructor.get_full_name }}</p>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="sessionSelect" class="form-label">Select Session</label>
+            <select name="session" id="sessionSelect" class="form-select" onchange="this.form.submit()">
+                {% for sess in sessions %}
+                <option value="{{ sess.pk }}" {% if session and sess.pk == session.pk %}selected{% endif %}>
+                    {{ sess.start_time|date:"Y-m-d H:i" }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Status</th>
+                    <th>Note</th>
+                    <th>Marked At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.student.get_full_name }}</td>
+                    <td>
+                        <select name="status_{{ row.student.pk }}" class="form-select">
+                            <option value="">--</option>
+                            <option value="present" {% if row.attendance and row.attendance.status == 'present' %}selected{% endif %}>Present</option>
+                            <option value="absent" {% if row.attendance and row.attendance.status == 'absent' %}selected{% endif %}>Absent</option>
+                            <option value="late" {% if row.attendance and row.attendance.status == 'late' %}selected{% endif %}>Late</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" name="note_{{ row.student.pk }}" class="form-control" 
+                               value="{{ row.attendance.note if row.attendance else '' }}">
+                    </td>
+                    <td>
+                        {{ row.attendance.marked_at|date:"Y-m-d H:i" if row.attendance }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary mt-3">Save Attendance</button>
+    </form>
+</div>
+{% endblock %}
+

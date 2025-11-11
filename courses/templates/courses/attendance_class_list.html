@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Class Attendance{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Classrooms</h2>
+    <div class="list-group mt-3">
+        {% for classroom in classrooms %}
+        <a href="{% url 'courses:classroom_attendance' classroom.pk %}" class="list-group-item list-group-item-action">
+            <strong>{{ classroom.title }}</strong> — {{ classroom.course.title }}  
+            <span class="badge bg-primary float-end">{{ classroom.students.count }} Students</span>
+        </a>
+        {% empty %}
+        <p>No classrooms found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

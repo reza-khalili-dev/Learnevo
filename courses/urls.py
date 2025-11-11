@@ -4,6 +4,7 @@ from . import views
 app_name = "courses"
 
 urlpatterns = [
+    path('dashboard/', views.CoursesDashboardView.as_view(), name='dashboard'),
     path('',views.CourseListView.as_view(), name='course_list'),
     path('<int:pk>/',views.CourseDetailView.as_view(), name='course_detail'),
     path('create/',views.CourseCreateView.as_view(), name='course_create'),
@@ -19,10 +20,6 @@ urlpatterns = [
     path("classroom/<int:classroom_id>/sessions/create/", views.SessionCreateView.as_view(), name="session_create"),
     path("sessions/<int:pk>/update/", views.SessionUpdateView.as_view(), name="session_update"),
     path("sessions/<int:pk>/delete/", views.SessionDeleteView.as_view(), name="session_delete"),
-    path('sessions/<int:session_pk>/attendance/', views.AttendanceListView.as_view(), name='attendance_list'),
-    path('sessions/<int:session_pk>/attendance/create/<int:student_pk>/', views.AttendanceCreateView.as_view(), name='attendance_create'),
-    path('attendance/<int:pk>/update/', views.AttendanceUpdateView.as_view(), name='attendance_update'),
-    path('attendance/<int:pk>/delete/', views.AttendanceDeleteView.as_view(), name='attendance_delete'),
     path("courses/<int:course_pk>/assignments/", views.AssignmentListView.as_view(), name="assignment_list"),
     path("assignments/<int:pk>/", views.AssignmentDetailView.as_view(), name="assignment_detail"),
     path("courses/<int:course_pk>/assignments/create/", views.AssignmentCreateView.as_view(), name="assignment_create"),
@@ -33,6 +30,8 @@ urlpatterns = [
     path("submissions/<int:pk>/", views.SubmissionUpdateView.as_view(), name="submission_update"),
     path("instructor/courses/", views.InstructorCourseListView.as_view(), name="instructor_courses"),
     path("instructor/sessions/", views.InstructorSessionListView.as_view(), name="instructor_sessions"),
+    path('attendances/classes/', views.ClassAttendanceListView.as_view(), name='attendance_class_list'),
+    path('attendances/classroom/<int:classroom_pk>/', views.ClassroomAttendanceView.as_view(), name='classroom_attendance'),
 ]
 
 

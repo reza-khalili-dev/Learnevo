@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Courses Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Courses Management Dashboard</h1>
+
+    <div class="row g-4">
+
+        <!-- Courses -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Courses</h5>
+                    <p class="card-text">Manage all courses: view, create, update, delete.</p>
+                    <a href="{% url 'courses:course_list' %}" class="btn btn-primary">View Courses</a>
+                    <a href="{% url 'courses:course_create' %}" class="btn btn-success">Add Course</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classrooms -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Classrooms</h5>
+                    <p class="card-text">Manage classrooms for courses, assign students, set capacity.</p>
+                    <a href="{% url 'courses:class_list' %}" class="btn btn-primary">View Classes</a>
+                    <a href="{% url 'courses:class_create' %}" class="btn btn-success">Add Class</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Sessions</h5>
+                    <p class="card-text">Manage sessions for each classroom.</p>
+                    <a href="{% url 'courses:class_list' %}" class="btn btn-primary">View Sessions</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Attendance</h5>
+                    <p class="card-text">Mark or view attendance for students.</p>
+                    <a href="{% url 'courses:attendance_class_list' %}" class="btn btn-primary">View Attendance</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignments -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Assignments</h5>
+                    <p class="card-text">Manage assignments for courses, view submissions.</p>
+                    <a href="{% url 'courses:course_list' %}" class="btn btn-primary">View Assignments</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submissions -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Submissions</h5>
+                    <p class="card-text">View and grade student submissions.</p>
+                    <a href="{% url 'courses:course_list' %}" class="btn btn-primary">View Submissions</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <hr class="my-5">
+
+    <!-- Quick stats -->
+    <div class="row g-4 mt-4">
+        <div class="col-md-3">
+            <div class="alert alert-info text-center shadow-sm">
+                <h4>{{ courses_count }}</h4>
+                <p>Courses</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="alert alert-success text-center shadow-sm">
+                <h4>{{ classes_count }}</h4>
+                <p>Classrooms</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="alert alert-warning text-center shadow-sm">
+                <h4>{{ sessions_count }}</h4>
+                <p>Sessions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="alert alert-secondary text-center shadow-sm">
+                <h4>{{ students_count }}</h4>
+                <p>Students Enrolled</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
