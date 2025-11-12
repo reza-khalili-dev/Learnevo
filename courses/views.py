@@ -110,7 +110,6 @@ class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def form_valid(self, form):
         course = form.cleaned_data.get('course')
         user = self.request.user
-        # instructors can only create classes for their own courses
         if user.role == "instructor" and course.instructor != user:
             form.add_error('course', 'You can only create classes for your own courses.')
             return self.form_invalid(form)
@@ -141,8 +140,13 @@ class ClassDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('class_list')
 
     def test_func(self):
+        user = self.request.user
         class_obj = self.get_object()
-        return self.request.user == class_obj.course.instructor
+
+        if user.role in ['manager', 'employee']:
+            return True
+
+        return False
     
 
 
