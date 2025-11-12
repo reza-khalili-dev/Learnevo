@@ -307,8 +307,13 @@ class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return reverse_lazy("session_list", kwargs={"classroom_id": self.object.classroom.id})
 
     def test_func(self):
+        user = self.request.user
         session = self.get_object()
-        return self.request.user == session.classroom.course.instructor
+
+        if user.role in ['manager', 'employee']:
+            return True
+
+        return False
     
 
 
