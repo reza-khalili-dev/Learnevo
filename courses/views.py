@@ -105,7 +105,7 @@ class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return form
 
     def test_func(self):
-        return getattr(self.request.user, 'role', None) in ['instructor', 'manager', 'employee']
+        return getattr(self.request.user, 'role', None) in ['manager', 'employee']
     
     def form_valid(self, form):
         course = form.cleaned_data.get('course')
@@ -126,12 +126,7 @@ class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         user = self.request.user
-        class_obj = self.get_object()
-        if user.role in ['manager', 'employee']:
-            return True
-        if user.role == 'instructor' and class_obj.course.instructor == user:
-            return True
-        return False
+        return user.role in ['manager', 'employee']
 
 
 class ClassDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
