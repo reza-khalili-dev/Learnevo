@@ -126,8 +126,14 @@ class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'courses/class_form.html'
 
     def test_func(self):
+        user = self.request.user
         class_obj = self.get_object()
-        return self.request.user == class_obj.course.instructor
+        if user.role in ['manager', 'employee']:
+            return True
+        if user.role == 'instructor' and class_obj.course.instructor == user:
+            return True
+        return False
+
 
 class ClassDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Classroom
