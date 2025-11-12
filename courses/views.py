@@ -83,21 +83,20 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
     template_name = 'courses/class_detail.html'
     context_object_name = 'class_obj'
 
+    def get_queryset(self):
+        return Classroom.objects.prefetch_related('sessions', 'students', 'course')
+    
 class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Classroom
     fields = ['course', 'title', 'start_date', 'end_date', 'capacity']
     template_name = 'courses/class_form.html'
 
-
-
-
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
         user_role = getattr(self.request.user, 'role', '').lower()
-        
+
         if user_role == 'instructor':
             form.fields['course'].queryset = Course.objects.filter(instructor=self.request.user)
-
         elif user_role in ['manager', 'employee']:
             form.fields['course'].queryset = Course.objects.all()
         else:
@@ -110,10 +109,16 @@ class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     
     def form_valid(self, form):
         course = form.cleaned_data.get('course')
-        if course.instructor != self.request.user:
-            form.add_error('course', 'You can only create classes for your courses.')
+        user = self.request.user
+        # instructors can only create classes for their own courses
+        if user.role == "instructor" and course.instructor != user:
+            form.add_error('course', 'You can only create classes for your own courses.')
             return self.form_invalid(form)
         return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('courses:class_detail', kwargs={'pk': self.object.pk})
+
     
 class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Classroom

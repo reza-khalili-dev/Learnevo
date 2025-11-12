@@ -4,14 +4,14 @@
 {% endif %}
 
 <ul>
-  {% for session in class_obj.session_set.all %}
-    <li>
-      {{ session.title }} - {{ session.date }} 
-      (<a href="{% url 'courses:session_detail' session.pk %}">View</a> |
-       <a href="{% url 'courses:session_update' session.pk %}">Edit</a> |
-       <a href="{% url 'courses:session_delete' session.pk %}">Delete</a>)
-    </li>
+  {% for session in class_obj.sessions.all %}
+      <li>
+          {{ session.title }} - {{ session.start_time|date:"Y-m-d H:i" }}
+          (<a href="{% url 'courses:session_detail' session.pk %}">View</a> |
+          <a href="{% url 'courses:session_update' session.pk %}">Edit</a> |
+          <a href="{% url 'courses:session_delete' session.pk %}">Delete</a>)
+      </li>
   {% empty %}
-    <li>No sessions yet.</li>
+      <li>No sessions yet.</li>
   {% endfor %}
 </ul>
