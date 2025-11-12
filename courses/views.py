@@ -282,8 +282,11 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return super().form_valid(form)
     
     def test_func(self):
-        classroom = Classroom.objects.get(id=self.kwargs["classroom_id"])
-        return self.request.user == classroom.course.instructor or self.request.user.role in ["manager", "employee"]
+        user = self.request.user
+
+        if user.role in ['manager', 'employee']:
+            return True
+        return False
 
 
 
@@ -294,10 +297,10 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         user = self.request.user
-        session = self.get_object()
+
         if user.role in ['manager', 'employee']:
             return True
-        return session.classroom.course.instructor == user
+        return False
 
 class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Session
