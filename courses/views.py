@@ -289,8 +289,11 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "courses/session_form.html"
 
     def test_func(self):
+        user = self.request.user
         session = self.get_object()
-        return self.request.user == session.classroom.course.instructor
+        if user.role in ['manager', 'employee']:
+            return True
+        return session.classroom.course.instructor == user
 
 class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Session
