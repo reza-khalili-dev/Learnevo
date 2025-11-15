@@ -291,21 +291,22 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 
 
-
-
-
 class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Session
     form_class = SessionForm
     template_name = "courses/session_form.html"
 
+    def get_success_url(self):
+        return reverse("courses:session_detail", kwargs={"pk": self.object.id})
+
     def test_func(self):
         user = self.request.user
-
+        session = self.get_object()
         if user.role in ['manager', 'employee']:
             return True
-        return False
-
+        return False 
+    
+    
 class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Session
     template_name = "courses/session_confirm_delete.html"
