@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>{{ session.title }}</h2>
-<p>Classroom: {{ session.classroom.title }}</p>
-<p>date: {{ session.start_time.date }} </p>
-<p>time: {{ session.start_time }} to {{ session.end_time }}</p>
-<a href="{% url 'courses:session_update' session.pk %}">Edit</a> |
-<a href="{% url 'courses:session_delete' session.pk %}">Delete</a>
+<div class="container mt-5">
+    <h2>{{ session.title }}</h2>
+    <p><strong>Classroom:</strong> {{ session.classroom.title }}</p>
+    <p><strong>Date:</strong> {{ session.start_time|date:"Y-m-d" }}</p>
+    <p><strong>Time:</strong> {{ session.start_time|date:"H:i" }} to {{ session.end_time|date:"H:i" }}</p>
+    <a href="{% url 'courses:session_update' session.pk %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'courses:session_delete' session.pk %}" class="btn btn-danger">Delete</a>
+    <a href="{% url 'courses:session_list' classroom_id=session.classroom.id %}" class="btn btn-secondary">Back</a>
+</div>
 {% endblock %}

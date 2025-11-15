@@ -1,9 +1,25 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
+
 {% block content %}
-<h2>{% if form.instance.pk %} Edit session {% else %} Create session {% endif %}</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save</button>
-</form>
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title mb-4 text-center">
+                {% if form.instance.pk %}Edit Session{% else %}Create Session{% endif %}
+            </h2>
+
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="text-center mt-3">
+                    <button type="submit" class="btn btn-success">
+                        {% if form.instance.pk %}Update{% else %}Create{% endif %}
+                    </button>
+                    <a href="{% url 'courses:session_list' classroom_id=classroom_id %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

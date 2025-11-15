@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>حذف جلسه</h2>
-<p>"Are you sure you want to delete{{ session.title }} ?"</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Yes, delete.</button>
-</form>
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-body text-center">
+            <h2 class="card-title mb-4">Delete Session</h2>
+            <p>Are you sure you want to delete "<strong>{{ session.title }}</strong>"?</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Yes, delete</button>
+                <a href="{% url 'courses:session_list' classroom_id=session.classroom.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

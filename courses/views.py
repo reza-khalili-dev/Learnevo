@@ -283,11 +283,16 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse_lazy("courses:session_list", kwargs={"classroom_id": self.kwargs["classroom_id"]})
+        return reverse_lazy("courses:session_list", kwargs={"classroom_id": self.object.classroom.id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['classroom_id'] = self.kwargs['classroom_id']
+        return context
 
     def test_func(self):
-        user = self.request.user
-        return user.role in ['manager', 'employee']
+        return self.request.user.role in ['manager', 'employee']
+
 
 
 
@@ -299,12 +304,15 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_success_url(self):
         return reverse("courses:session_detail", kwargs={"pk": self.object.id})
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['classroom_id'] = self.object.classroom.id
+        return context
+
     def test_func(self):
         user = self.request.user
-        session = self.get_object()
-        if user.role in ['manager', 'employee']:
-            return True
-        return False 
+        return user.role in ['manager', 'employee']
+
     
     
 class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
