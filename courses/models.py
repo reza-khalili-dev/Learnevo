@@ -58,11 +58,14 @@ class Session(models.Model):
     def clean(self):
         super().clean()
 
+        if not self.classroom_id:
+            return 
+
         if self.start_time and self.end_time:
             if self.end_time <= self.start_time:
                 raise ValidationError(_("End time must be after start time."))
 
-            if self.classroom and self.classroom.start_date and self.classroom.end_date:
+            if self.classroom.start_date and self.classroom.end_date:
                 if not (self.classroom.start_date <= self.start_time.date() <= self.classroom.end_date):
                     raise ValidationError(_("Session start time must be within the classroom date range."))
                 if not (self.classroom.start_date <= self.end_time.date() <= self.classroom.end_date):
@@ -82,10 +85,13 @@ class Session(models.Model):
                 overlaps = ", ".join([s.title for s in overlapping_sessions])
                 raise ValidationError(_(f"Session overlaps with other sessions: {overlaps}"))
 
+
     class Meta:
         ordering = ["start_time"]
 
     def __str__(self):
+        if not self.classroom_id:
+            return f"Session — {self.title}"
         return f"{self.classroom.title} — {self.title}"
 
 

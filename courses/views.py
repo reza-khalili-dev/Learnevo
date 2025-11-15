@@ -258,6 +258,11 @@ class SessionListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         classroom_id = self.kwargs["classroom_id"]
         return Session.objects.filter(classroom_id=classroom_id)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['classroom_id'] = self.kwargs.get('classroom_id')
+        return ctx
     
 
 class SessionDetailView(LoginRequiredMixin, DetailView):
@@ -271,17 +276,21 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     template_name = 'courses/session_form.html'
 
     def form_valid(self, form):
-        form
         classroom = Classroom.objects.get(id=self.kwargs["classroom_id"])
-        form.instance.classroom = classroom
-        return super().form_valid(form)
-    
+        self.object = form.save(commit=False)
+        self.object.classroom = classroom
+        self.object.save()
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse_lazy("courses:session_list", kwargs={"classroom_id": self.kwargs["classroom_id"]})
+
     def test_func(self):
         user = self.request.user
+        return user.role in ['manager', 'employee']
 
-        if user.role in ['manager', 'employee']:
-            return True
-        return False
+
+
 
 
 

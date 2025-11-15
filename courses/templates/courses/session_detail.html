@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>{{ session.title }}</h2>
-<p>کلاس: {{ session.classroom.title }}</p>
-<p>تاریخ: {{ session.date }}</p>
-<p>زمان: {{ session.start_time }} تا {{ session.end_time }}</p>
+<p>Classroom: {{ session.classroom.title }}</p>
+<p>date: {{ session.start_time.date }} </p>
+<p>time: {{ session.start_time }} to {{ session.end_time }}</p>
 <a href="{% url 'courses:session_update' session.pk %}">Edit</a> |
 <a href="{% url 'courses:session_delete' session.pk %}">Delete</a>
 {% endblock %}
