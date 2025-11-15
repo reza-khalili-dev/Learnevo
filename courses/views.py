@@ -5,7 +5,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from config import settings
 from django.utils import timezone 
 from .models import Course, Classroom, Session, Attendance, Assignment, Submission
-from .forms import SessionForm, AttendanceForm, AssignmentForm, SubmissionForm
+from .forms import ClassForm, SessionForm, AttendanceForm, AssignmentForm, SubmissionForm
 from django.forms import modelformset_factory
 from django.contrib import messages
 from django.views import View
@@ -88,7 +88,7 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
     
 class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Classroom
-    fields = ['course', 'title', 'start_date', 'end_date', 'capacity']
+    form_class = ClassForm
     template_name = 'courses/class_form.html'
 
     def get_form(self, *args, **kwargs):
@@ -121,7 +121,7 @@ class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     
 class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Classroom
-    fields = ['title', 'start_date', 'end_date', 'capacity']
+    form_class = ClassForm
     template_name = 'courses/class_form.html'
 
     def test_func(self):
