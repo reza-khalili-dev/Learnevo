@@ -23,7 +23,7 @@
                 <td>{{ class_obj.end_date }}</td>
                 <td>{{ class_obj.capacity }}</td>
                 <td>
-                    <a href="{% url 'courses:class_detail' class_obj.pk %}" class="btn btn-sm btn-info">View</a>
+                    <a href="{% url 'courses:session_list' classroom_id=class_obj.pk %}" class="btn btn-sm btn-info">View</a>
                     <a href="{% url 'courses:class_update' class_obj.pk %}" class="btn btn-sm btn-warning">Edit</a>
                     <a href="{% url 'courses:class_delete' class_obj.pk %}" class="btn btn-sm btn-danger">Delete</a>
                 </td>

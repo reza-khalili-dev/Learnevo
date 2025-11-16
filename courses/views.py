@@ -283,7 +283,7 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse_lazy("courses:session_list", kwargs={"classroom_id": self.object.classroom.id})
+        return reverse("courses:session_list", kwargs={"classroom_id": self.object.classroom_id})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -302,7 +302,7 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "courses/session_form.html"
 
     def get_success_url(self):
-        return reverse("courses:session_detail", kwargs={"pk": self.object.id})
+        return reverse("courses:session_list", kwargs={"classroom_id": self.object.classroom_id})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
