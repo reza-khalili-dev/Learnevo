@@ -323,7 +323,10 @@ class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = "courses/session_confirm_delete.html"
 
     def get_success_url(self):
-        return reverse_lazy("session_list", kwargs={"classroom_id": self.object.classroom.id})
+        return reverse_lazy(
+            "courses:session_list",
+            kwargs={"classroom_id": self.object.classroom.id}
+        )
 
     def test_func(self):
         user = self.request.user
