@@ -135,16 +135,11 @@ class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 class ClassDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Classroom
     template_name = 'courses/class_confirm_delete.html'
-    success_url = reverse_lazy('class_list')
+    success_url = reverse_lazy('courses:class_list')
 
     def test_func(self):
         user = self.request.user
-        class_obj = self.get_object()
-
-        if user.role in ['manager', 'employee']:
-            return True
-
-        return False
+        return user.role in ['manager', 'employee']
     
 
 
