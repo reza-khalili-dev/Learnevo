@@ -128,6 +128,9 @@ class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         user = self.request.user
         return user.role in ['manager', 'employee']
 
+    def get_success_url(self):
+        return reverse("courses:session_list", kwargs={"classroom_id": self.object.pk})
+
 
 class ClassDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Classroom
