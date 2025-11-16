@@ -1,19 +1,35 @@
 from django import forms
+
+from users.signals import User
 from .models import Classroom, Session, Attendance, Assignment, Submission
 from django.utils import timezone
 
 
 
 
+
 class ClassForm(forms.ModelForm):
+    students = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(role='student'),
+        required=False,
+        widget=forms.CheckboxSelectMultiple, 
+        label="Students"
+    )
+
     class Meta:
         model = Classroom
-        fields = ['course', 'title', 'start_date', 'end_date', 'capacity']
+        fields = ['course', 'instructor', 'title', 'description', 'start_date', 'end_date', 'capacity', 'students']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['instructor'].queryset = User.objects.filter(role='instructor')
+        
+        
 class SessionForm(forms.ModelForm):
     class Meta:
         model = Session

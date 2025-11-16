@@ -8,6 +8,7 @@
             <tr>
                 <th>Title</th>
                 <th>Course</th>
+                <th>Instructor</th>
                 <th>Start</th>
                 <th>End</th>
                 <th>Capacity</th>
@@ -19,6 +20,7 @@
             <tr>
                 <td>{{ class_obj.title }}</td>
                 <td>{{ class_obj.course.title }}</td>
+                <td>{{ class_obj.instructor.get_full_name|default:class_obj.instructor.username }}</td>
                 <td>{{ class_obj.start_date }}</td>
                 <td>{{ class_obj.end_date }}</td>
                 <td>{{ class_obj.capacity }}</td>
@@ -29,7 +31,7 @@
                 </td>
             </tr>
         {% empty %}
-            <tr><td colspan="6" class="text-center">No classes found.</td></tr>
+            <tr><td colspan="7" class="text-center">No classes found.</td></tr>
         {% endfor %}
         </tbody>
     </table>
