@@ -1,33 +1,124 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
+
 <div class="container mt-4">
+
     <h2>{{ class_obj.title }}</h2>
+    <h5 class="text-muted">{{ class_obj.course.title }}</h5>
 
-    <h3 class="mt-4">Sessions</h3>
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mt-4">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#details">Details</a>
+        </li>
 
-    {% if user == class_obj.course.instructor or user.role == "manager" or user.role == "employee" %}
-        <a href="{% url 'courses:session_create' classroom_id=class_obj.pk %}" class="btn btn-primary btn-sm mb-3">
-            Add New Session
-        </a>
-    {% endif %}
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#sessions">Sessions</a>
+        </li>
 
-    <ul class="list-group">
-        {% for session in class_obj.sessions.all %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>{{ session.title }}</strong> —
-                    {{ session.start_time|date:"Y-m-d H:i" }} to {{ session.end_time|date:"Y-m-d H:i" }}
-                </div>
-                <div class="btn-group btn-group-sm" role="group">
-                    <a href="{% url 'courses:session_detail' session.pk %}" class="btn btn-outline-primary">View</a>
-                    <a href="{% url 'courses:session_update' session.pk %}" class="btn btn-outline-secondary">Edit</a>
-                    <a href="{% url 'courses:session_delete' session.pk %}" class="btn btn-outline-danger">Delete</a>
-                </div>
-            </li>
-        {% empty %}
-            <li class="list-group-item text-muted">No sessions yet.</li>
-        {% endfor %}
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#students">Students</a>
+        </li>
     </ul>
+
+
+    <div class="tab-content mt-3">
+
+        <!-- DETAILS TAB -->
+        <div class="tab-pane fade show active" id="details">
+
+            <table class="table table-bordered">
+                <tr>
+                    <th>Title</th>
+                    <td>{{ class_obj.title }}</td>
+                </tr>
+
+                <tr>
+                    <th>Course</th>
+                    <td>{{ class_obj.course.title }}</td>
+                </tr>
+
+                <tr>
+                    <th>Instructor</th>
+                    <td>{{ class_obj.instructor.get_full_name|default:class_obj.instructor.email }}</td>
+                </tr>
+
+                <tr>
+                    <th>Start</th>
+                    <td>{{ class_obj.start_date }}</td>
+                </tr>
+
+                <tr>
+                    <th>End</th>
+                    <td>{{ class_obj.end_date|default:"—" }}</td>
+                </tr>
+
+                <tr>
+                    <th>Capacity</th>
+                    <td>{{ class_obj.capacity|default:"—" }}</td>
+                </tr>
+
+                <tr>
+                    <th>Description</th>
+                    <td>{{ class_obj.description|default:"—" }}</td>
+                </tr>
+            </table>
+        </div>
+
+
+        <!-- SESSIONS TAB -->
+        <div class="tab-pane fade" id="sessions">
+
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>Sessions</h4>
+
+                {% if user == class_obj.instructor or user.role == "manager" or user.role == "employee" %}
+                    <a href="{% url 'courses:session_create' classroom_id=class_obj.pk %}"
+                       class="btn btn-primary btn-sm">
+                        Add Session
+                    </a>
+                {% endif %}
+            </div>
+
+            <ul class="list-group mt-3">
+                {% for session in class_obj.sessions.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ session.title }}</strong><br>
+                            {{ session.start_time|date:"Y-m-d H:i" }} →
+                            {{ session.end_time|date:"Y-m-d H:i" }}
+                        </div>
+
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'courses:session_detail' session.pk %}" class="btn btn-outline-primary">View</a>
+                            <a href="{% url 'courses:session_update' session.pk %}" class="btn btn-outline-secondary">Edit</a>
+                            <a href="{% url 'courses:session_delete' session.pk %}" class="btn btn-outline-danger">Delete</a>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">No sessions yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+
+        <!-- STUDENTS TAB -->
+        <div class="tab-pane fade" id="students">
+            <h4>Students</h4>
+
+            <ul class="list-group mt-3">
+                {% for student in class_obj.students.all %}
+                    <li class="list-group-item">
+                        {{ student.get_full_name|default:student.email }}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">No students enrolled.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </div>
 </div>
+
 {% endblock %}
