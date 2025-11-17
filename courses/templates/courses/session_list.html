@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-5">
+
     <h2>Class Sessions</h2>
+
     <ul class="list-group mb-3">
         {% for session in sessions %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -19,6 +21,17 @@
             <li class="list-group-item text-muted">No sessions have been recorded.</li>
         {% endfor %}
     </ul>
-    <a href="{% url 'courses:session_create' classroom_id=classroom_id %}" class="btn btn-success">Add New Session</a>
+
+    <!-- Back Button -->
+    <a href="{% url 'courses:class_detail' classroom_id %}"
+       class="btn btn-secondary mb-3">
+        ← Back to Class Dashboard
+    </a>
+
+    <!-- Add session button -->
+    <a href="{% url 'courses:session_create' classroom_id=classroom_id %}" class="btn btn-success">
+        Add New Session
+    </a>
+
 </div>
 {% endblock %}

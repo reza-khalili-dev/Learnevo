@@ -116,7 +116,7 @@ class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('courses:class_detail', kwargs={'pk': self.object.pk})
+        return reverse("courses:class_detail", kwargs={"pk": self.object.pk})
 
     
 class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -129,7 +129,7 @@ class ClassUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return user.role in ['manager', 'employee']
 
     def get_success_url(self):
-        return reverse("courses:session_list", kwargs={"classroom_id": self.object.pk})
+        return reverse("courses:class_detail", kwargs={"pk": self.object.pk})
 
 
 class ClassDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -281,7 +281,8 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse("courses:session_list", kwargs={"classroom_id": self.object.classroom_id})
+        return reverse("courses:class_detail", kwargs={"pk": self.object.classroom_id})
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -300,7 +301,8 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "courses/session_form.html"
 
     def get_success_url(self):
-        return reverse("courses:session_list", kwargs={"classroom_id": self.object.classroom_id})
+        return reverse("courses:class_detail", kwargs={"pk": self.object.classroom_id})
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -318,10 +320,7 @@ class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = "courses/session_confirm_delete.html"
 
     def get_success_url(self):
-        return reverse_lazy(
-            "courses:session_list",
-            kwargs={"classroom_id": self.object.classroom.id}
-        )
+        return reverse_lazy("courses:class_detail",kwargs={"pk": self.object.classroom.id})
 
     def test_func(self):
         user = self.request.user
