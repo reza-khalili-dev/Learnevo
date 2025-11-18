@@ -1,0 +1,27 @@
+<h4>Recent Submissions</h4>
+
+{% if submissions %}
+    <div class="list-group">
+        {% for submission in submissions %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <strong>{{ submission.assignment.title }}</strong>
+                        <br>
+                        <small>by {{ submission.student.get_full_name }}</small>
+                    </div>
+                    <div>
+                        <small class="text-muted">{{ submission.submitted_at|date:"Y-m-d H:i" }}</small>
+                        {% if submission.grade %}
+                            <span class="badge bg-success ms-2">Grade: {{ submission.grade }}</span>
+                        {% else %}
+                            <span class="badge bg-warning ms-2">Not graded</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">No submissions yet.</p>
+{% endif %}

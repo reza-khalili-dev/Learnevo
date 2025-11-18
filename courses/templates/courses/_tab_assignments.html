@@ -1,0 +1,29 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Assignments</h4>
+    {% if user.role in "manager employee instructor" %}
+        <a href="{% url 'courses:assignment_create' course_pk=class_obj.course.pk %}" 
+           class="btn btn-primary btn-sm">
+            Add Assignment
+        </a>
+    {% endif %}
+</div>
+
+{% if assignments %}
+    <div class="list-group">
+        {% for assignment in assignments %}
+            <div class="list-group-item">
+                <h5>{{ assignment.title }}</h5>
+                <p class="mb-1">{{ assignment.description|truncatewords:30 }}</p>
+                <small class="text-muted">
+                    Due: {{ assignment.due_date|date:"Y-m-d H:i"|default:"No due date" }}
+                </small>
+                <div class="mt-2">
+                    <a href="{% url 'courses:assignment_detail' assignment.pk %}" 
+                       class="btn btn-outline-primary btn-sm">View</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">No assignments yet.</p>
+{% endif %}

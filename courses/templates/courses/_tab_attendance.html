@@ -1,0 +1,36 @@
+<h4>Attendance</h4>
+
+{% if attendances %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Session</th>
+                    <th>Student</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendances %}
+                    <tr>
+                        <td>{{ attendance.session.title }}</td>
+                        <td>{{ attendance.student.get_full_name }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if attendance.status == 'present' %}bg-success
+                                {% elif attendance.status == 'absent' %}bg-danger
+                                {% elif attendance.status == 'late' %}bg-warning
+                                {% else %}bg-secondary{% endif %}">
+                                {{ attendance.status|title }}
+                            </span>
+                        </td>
+                        <td>{{ attendance.session.start_time|date:"Y-m-d" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="text-muted">No attendance records yet.</p>
+{% endif %}

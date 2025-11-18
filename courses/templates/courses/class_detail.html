@@ -7,7 +7,6 @@
     <h2>{{ class_obj.title }}</h2>
     <h5 class="text-muted">{{ class_obj.course.title }}</h5>
 
-    <!-- Tabs -->
     <ul class="nav nav-tabs mt-4">
         <li class="nav-item">
             <a class="nav-link active" data-bs-toggle="tab" href="#details">Details</a>
@@ -20,14 +19,25 @@
         <li class="nav-item">
             <a class="nav-link" data-bs-toggle="tab" href="#students">Students</a>
         </li>
-    </ul>
 
+        <!-- تب‌های جدید -->
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#attendance">Attendance</a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#assignments">Assignments</a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#submissions">Submissions</a>
+        </li>
+    </ul>
 
     <div class="tab-content mt-3">
 
         <!-- DETAILS TAB -->
         <div class="tab-pane fade show active" id="details">
-
             <table class="table table-bordered">
                 <tr>
                     <th>Title</th>
@@ -41,7 +51,9 @@
 
                 <tr>
                     <th>Instructor</th>
-                    <td>{{ class_obj.instructor.get_full_name|default:class_obj.instructor.email }}</td>
+                    <td>
+                        {{ class_obj.instructor.get_full_name|default:class_obj.instructor.email }}
+                    </td>
                 </tr>
 
                 <tr>
@@ -66,10 +78,8 @@
             </table>
         </div>
 
-
         <!-- SESSIONS TAB -->
         <div class="tab-pane fade" id="sessions">
-
             <div class="d-flex justify-content-between align-items-center">
                 <h4>Sessions</h4>
 
@@ -82,12 +92,12 @@
             </div>
 
             <ul class="list-group mt-3">
-                {% for session in class_obj.sessions.all %}
+                {% for session in sessions %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <div>
-                            <strong>{{ session.title }}</strong><br>
-                            {{ session.start_time|date:"Y-m-d H:i" }} →
-                            {{ session.end_time|date:"Y-m-d H:i" }}
+                            <strong>{{ session.title }}</strong>
+                            <br>
+                            {{ session.start_time|date:"Y-m-d H:i" }} → {{ session.end_time|date:"Y-m-d H:i" }}
                         </div>
 
                         <div class="btn-group btn-group-sm">
@@ -102,13 +112,12 @@
             </ul>
         </div>
 
-
         <!-- STUDENTS TAB -->
         <div class="tab-pane fade" id="students">
             <h4>Students</h4>
 
             <ul class="list-group mt-3">
-                {% for student in class_obj.students.all %}
+                {% for student in students %}
                     <li class="list-group-item">
                         {{ student.get_full_name|default:student.email }}
                     </li>
@@ -116,6 +125,134 @@
                     <li class="list-group-item text-muted">No students enrolled.</li>
                 {% endfor %}
             </ul>
+        </div>
+
+        <!-- ASSIGNMENTS TAB -->
+        <div class="tab-pane fade" id="assignments">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Assignments</h4>
+                {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
+                    <a href="{% url 'courses:assignment_create' course_pk=class_obj.course.pk %}" 
+                       class="btn btn-primary btn-sm">
+                        Add Assignment
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if assignments %}
+                <div class="list-group">
+                    {% for assignment in assignments %}
+                        <div class="list-group-item">
+                            <h5>{{ assignment.title }}</h5>
+                            <p class="mb-1">{{ assignment.description|truncatewords:30|default:"No description" }}</p>
+                            <small class="text-muted">
+                                Due: {{ assignment.due_date|date:"Y-m-d H:i"|default:"No due date" }}
+                            </small>
+                            <div class="mt-2">
+                                <a href="{% url 'courses:assignment_detail' assignment.pk %}" 
+                                   class="btn btn-outline-primary btn-sm">View</a>
+                                {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
+                                    <a href="{% url 'courses:assignment_update' assignment.pk %}" 
+                                       class="btn btn-outline-secondary btn-sm">Edit</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No assignments for this class yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- ATTENDANCE TAB -->
+        <div class="tab-pane fade" id="attendance">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Attendance Records</h4>
+                {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
+                    <a href="{% url 'courses:classroom_attendance' classroom_pk=class_obj.pk %}" 
+                       class="btn btn-primary btn-sm">
+                        Manage Attendance
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if attendances %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Marked By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in attendances %}
+                                <tr>
+                                    <td>{{ attendance.session.title }}</td>
+                                    <td>{{ attendance.student.get_full_name|default:attendance.student.email }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if attendance.status == 'present' %}bg-success
+                                            {% elif attendance.status == 'absent' %}bg-danger
+                                            {% elif attendance.status == 'late' %}bg-warning
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ attendance.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ attendance.session.start_time|date:"Y-m-d" }}</td>
+                                    <td>{{ attendance.marked_by.get_full_name|default:attendance.marked_by.email }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No attendance records for this class yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- SUBMISSIONS TAB -->
+        <div class="tab-pane fade" id="submissions">
+            <h4>Recent Submissions</h4>
+
+            {% if submissions %}
+                <div class="list-group">
+                    {% for submission in submissions %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ submission.assignment.title }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        by {{ submission.student.get_full_name|default:submission.student.email }}
+                                    </small>
+                                    <br>
+                                    <small>Submitted: {{ submission.submitted_at|date:"Y-m-d H:i" }}</small>
+                                    {% if submission.feedback %}
+                                        <br>
+                                        <small class="text-info">Feedback: {{ submission.feedback|truncatewords:10 }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    {% if submission.grade %}
+                                        <span class="badge bg-success">Grade: {{ submission.grade }}/{{ submission.assignment.max_score }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Not graded</span>
+                                    {% endif %}
+                                    <br>
+                                    <a href="{% url 'courses:submission_update' submission.pk %}" 
+                                       class="btn btn-outline-primary btn-sm mt-1">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No submissions for this class yet.</p>
+            {% endif %}
         </div>
 
     </div>

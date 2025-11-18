@@ -83,8 +83,34 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
     template_name = 'courses/class_detail.html'
     context_object_name = 'class_obj'
 
-    def get_queryset(self):
-        return Classroom.objects.prefetch_related('sessions', 'students', 'course')
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        classroom = self.get_object()
+
+
+        ctx["sessions"] = Session.objects.filter(
+            classroom=classroom
+        ).order_by("start_time")
+
+
+        ctx["students"] = classroom.students.all()
+
+
+        ctx["assignments"] = Assignment.objects.filter(
+            course=classroom.course
+        ).order_by("-created_at")
+
+
+        ctx["attendances"] = Attendance.objects.filter(
+            session__classroom=classroom
+        ).select_related('session', 'student', 'marked_by').order_by('-session__start_time')
+
+
+        ctx["submissions"] = Submission.objects.filter(
+            assignment__course=classroom.course
+        ).select_related("student", "assignment").order_by("-submitted_at")[:20]
+
+        return ctx
     
 class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Classroom
@@ -248,25 +274,13 @@ class ClassroomAttendanceView(LoginRequiredMixin, View):
 
 # Session views
 
-class SessionListView(LoginRequiredMixin, ListView):
-    model = Session
-    template_name = 'courses/session_list.html'
-    context_object_name = 'sessions'
-    
-    def get_queryset(self):
-        classroom_id = self.kwargs["classroom_id"]
-        return Session.objects.filter(classroom_id=classroom_id)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['classroom_id'] = self.kwargs.get('classroom_id')
-        return ctx
-    
 
 class SessionDetailView(LoginRequiredMixin, DetailView):
     model = Session
     template_name = 'courses/session_detail.html'
     context_object_name = 'session'
+
     
 class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Session
@@ -280,9 +294,9 @@ class SessionCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         self.object.save()
         return redirect(self.get_success_url())
 
+    # redirect to the classroom detail (hub)
     def get_success_url(self):
-        return reverse("courses:class_detail", kwargs={"pk": self.object.classroom_id})
-
+        return reverse('courses:class_detail', kwargs={"pk": self.object.classroom.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -301,8 +315,8 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "courses/session_form.html"
 
     def get_success_url(self):
-        return reverse("courses:class_detail", kwargs={"pk": self.object.classroom_id})
-
+        # after edit go back to the classroom detail (hub)
+        return reverse('courses:class_detail', kwargs={"pk": self.object.classroom.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -310,8 +324,8 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return context
 
     def test_func(self):
-        user = self.request.user
-        return user.role in ['manager', 'employee']
+        return self.request.user.role in ['manager', 'employee']
+
 
     
     
@@ -320,15 +334,12 @@ class SessionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = "courses/session_confirm_delete.html"
 
     def get_success_url(self):
-        return reverse_lazy("courses:class_detail",kwargs={"pk": self.object.classroom.id})
+        return reverse_lazy("courses:class_detail", kwargs={"pk": self.object.classroom.id})
 
     def test_func(self):
         user = self.request.user
-        session = self.get_object()
-
         if user.role in ['manager', 'employee']:
             return True
-
         return False
     
 
