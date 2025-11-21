@@ -61,6 +61,9 @@ urlpatterns = [
     # -------------------------------
     # Attendance System
     # -------------------------------
-    path('attendances/classes/', views.ClassAttendanceListView.as_view(), name='attendance_class_list'),
-    path('attendances/classroom/<int:classroom_pk>/', views.ClassroomAttendanceView.as_view(), name='classroom_attendance'),
-]
+    path('attendances/classroom/<int:classroom_pk>/',views.ClassroomAttendanceView.as_view(),name='classroom_attendance'),
+    path("classes/<int:classroom_pk>/attendance/save/", views.AttendanceSaveView.as_view(), name="attendance_save"),
+    
+    
+    
+    ]

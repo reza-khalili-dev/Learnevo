@@ -9,7 +9,7 @@
 
     <ul class="nav nav-tabs mt-4">
         <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#details">Details</a>
+            <a class="nav-link" data-bs-toggle="tab" href="#details">Details</a>
         </li>
 
         <li class="nav-item">
@@ -20,9 +20,10 @@
             <a class="nav-link" data-bs-toggle="tab" href="#students">Students</a>
         </li>
 
-        <!-- تب‌های جدید -->
+        
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#attendance">Attendance</a>
+            <a class="nav-link" data-bs-toggle="tab" href="#attendance" id="attendance-tab">Attendance</a>
+
         </li>
 
         <li class="nav-item">
@@ -37,7 +38,7 @@
     <div class="tab-content mt-3">
 
         <!-- DETAILS TAB -->
-        <div class="tab-pane fade show active" id="details">
+        <div class="tab-pane fade show " id="details">
             <table class="table table-bordered">
                 <tr>
                     <th>Title</th>
@@ -166,53 +167,30 @@
 
         <!-- ATTENDANCE TAB -->
         <div class="tab-pane fade" id="attendance">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>Attendance Records</h4>
-                {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
-                    <a href="{% url 'courses:classroom_attendance' classroom_pk=class_obj.pk %}" 
-                       class="btn btn-primary btn-sm">
-                        Manage Attendance
-                    </a>
-                {% endif %}
-            </div>
 
-            {% if attendances %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Session</th>
-                                <th>Student</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Marked By</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for attendance in attendances %}
-                                <tr>
-                                    <td>{{ attendance.session.title }}</td>
-                                    <td>{{ attendance.student.get_full_name|default:attendance.student.email }}</td>
-                                    <td>
-                                        <span class="badge 
-                                            {% if attendance.status == 'present' %}bg-success
-                                            {% elif attendance.status == 'absent' %}bg-danger
-                                            {% elif attendance.status == 'late' %}bg-warning
-                                            {% else %}bg-secondary{% endif %}">
-                                            {{ attendance.status|title }}
-                                        </span>
-                                    </td>
-                                    <td>{{ attendance.session.start_time|date:"Y-m-d" }}</td>
-                                    <td>{{ attendance.marked_by.get_full_name|default:attendance.marked_by.email }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text-muted">No attendance records for this class yet.</p>
+            <h4>Manage Attendance</h4>
+
+            <h5>Select a Session</h5>
+            <ul class="list-group mb-3">
+                {% for session in sessions %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>
+                            <strong>{{ session.title }}</strong><br>
+                            {{ session.start_time|date:"Y-m-d H:i" }}
+                        </span>
+                        <a href="{% url 'courses:class_detail' class_obj.pk %}?session_id={{ session.id }}#attendance"
+                        class="btn btn-outline-primary btn-sm">Manage</a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% if selected_session %}
+                <hr>
+                {% include "courses/attendance_form.html" %}
             {% endif %}
+
         </div>
+
 
         <!-- SUBMISSIONS TAB -->
         <div class="tab-pane fade" id="submissions">
@@ -257,5 +235,5 @@
 
     </div>
 </div>
-
+<script src="{% static 'courses/js/attendance_tab.js' %}"></script>
 {% endblock %}

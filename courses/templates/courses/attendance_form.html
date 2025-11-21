@@ -1,0 +1,66 @@
+<div class="card">
+    <div class="card-header">
+        <h5>
+            {% if selected_session %}
+                Mark Attendance — {{ selected_session.title }}
+            {% else %}
+                Mark Attendance
+            {% endif %}
+        </h5>
+    </div>
+
+    <div class="card-body">
+        {% if not selected_session %}
+            <p class="text-muted">Please select a session to manage attendance.</p>
+        {% else %}
+            <form method="post" action="{% url 'courses:attendance_save' classroom_pk=class_obj.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="session_id" value="{{ selected_session.id }}">
+
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for row in attendance_rows %}
+                            <tr>
+                                <td>{{ row.student.get_full_name|default:row.student.email }}</td>
+                                <td>
+                                    <select name="status_{{ row.student.id }}" class="form-select">
+                                        <option value="">-- select --</option>
+
+                                        <option value="present"
+                                            {% if row.attendance and row.attendance.status == "present" %}selected{% endif %}>
+                                            Present
+                                        </option>
+
+                                        <option value="absent"
+                                            {% if row.attendance and row.attendance.status == "absent" %}selected{% endif %}>
+                                            Absent
+                                        </option>
+
+                                        <option value="late"
+                                            {% if row.attendance and row.attendance.status == "late" %}selected{% endif %}>
+                                            Late
+                                        </option>
+
+                                        <option value="excused"
+                                            {% if row.attendance and row.attendance.status == "excused" %}selected{% endif %}>
+                                            Excused
+                                        </option>
+                                    </select>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <button type="submit" class="btn btn-success">Save Attendance</button>
+            </form>
+        {% endif %}
+    </div>
+</div>

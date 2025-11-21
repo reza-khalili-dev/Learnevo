@@ -87,30 +87,41 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         classroom = self.get_object()
 
-
-        ctx["sessions"] = Session.objects.filter(
-            classroom=classroom
-        ).order_by("start_time")
-
-
-        ctx["students"] = classroom.students.all()
-
-
-        ctx["assignments"] = Assignment.objects.filter(
-            course=classroom.course
-        ).order_by("-created_at")
-
-
-        ctx["attendances"] = Attendance.objects.filter(
-            session__classroom=classroom
-        ).select_related('session', 'student', 'marked_by').order_by('-session__start_time')
-
-
+        # sessions, students, assignments, submissions, attendances (existing)
+        ctx["sessions"] = Session.objects.filter(classroom=classroom).order_by("start_time")
+        students_qs = classroom.students.all()
+        ctx["students"] = students_qs
+        ctx["assignments"] = Assignment.objects.filter(course=classroom.course).order_by("-created_at")
         ctx["submissions"] = Submission.objects.filter(
             assignment__course=classroom.course
         ).select_related("student", "assignment").order_by("-submitted_at")[:20]
 
+        # default attendances list (all)
+        ctx["attendances"] = Attendance.objects.filter(
+            session__classroom=classroom
+        ).select_related('session', 'student', 'marked_by').order_by('-session__start_time')
+
+        # --- NEW: detect selected session from querystring and build attendance rows ---
+        session_id = self.request.GET.get('session_id') or self.request.GET.get('session')  # accept either param
+        selected_session = None
+        attendance_rows = []  # list of dicts: {student, attendance}
+        if session_id:
+            selected_session = Session.objects.filter(pk=session_id, classroom=classroom).first()
+            if selected_session:
+                existing_qs = Attendance.objects.filter(session=selected_session).select_related('student')
+                existing_map = {a.student_id: a for a in existing_qs}
+                for student in students_qs:
+                    attendance_rows.append({
+                        'student': student,
+                        'attendance': existing_map.get(student.pk)  # can be None
+                    })
+
+        ctx['selected_session'] = selected_session
+        ctx['attendance_rows'] = attendance_rows
+        # ------------------------------------------------------------------------------
+
         return ctx
+
     
 class ClassCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Classroom
@@ -177,100 +188,81 @@ def role_of(user):
     except Exception:
         return ''
 
-class ClassAttendanceListView(LoginRequiredMixin, ListView):
-    model = Classroom
-    template_name = 'courses/attendance_class_list.html'
-    context_object_name = 'classrooms'
 
-    def get_queryset(self):
+
+
+class ClassroomAttendanceView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "courses/class_detail.html"
+
+    def test_func(self):
         user = self.request.user
-        if role_of(user) in ('manager', 'employee'):
-            return Classroom.objects.select_related('course', 'course__instructor').prefetch_related('students')
-
-        if role_of(user) == 'instructor':
-            return Classroom.objects.filter(course__instructor=user).select_related('course')
-
-        return Classroom.objects.filter(students=user)
-
-class ClassroomAttendanceView(LoginRequiredMixin, View):
-
-    template_name = 'courses/classroom_attendance.html'
+        classroom = get_object_or_404(Classroom, pk=self.kwargs["classroom_pk"])
+        return (
+            user.role in ['manager', 'employee'] or 
+            user == classroom.instructor
+        )
 
     def get(self, request, classroom_pk):
-        classroom = get_object_or_404(Classroom.objects.select_related('course','course__instructor').prefetch_related('students','sessions'), pk=classroom_pk)
-        session_pk = request.GET.get('session')
-        session = None
-        if session_pk:
-            session = classroom.sessions.filter(pk=session_pk).first()
-        else:
-            session = classroom.sessions.order_by('-start_time').first()
-
-        AttendanceFormSet = modelformset_factory(Attendance, form=AttendanceForm, extra=0)
-
-        if session:
-            existing_qs = Attendance.objects.filter(session=session).select_related('student','marked_by')
-        else:
-            existing_qs = Attendance.objects.none()
-
-        attendance_map = {a.student_id: a for a in existing_qs}
-        rows = []
-        for student in classroom.students.all():
-            rows.append({
-                'student': student,
-                'attendance': attendance_map.get(student.pk)
-            })
+        classroom = get_object_or_404(Classroom, pk=classroom_pk)
 
         context = {
-            'classroom': classroom,
-            'instructor': classroom.course.instructor,
-            'session': session,
-            'sessions': classroom.sessions.all(),
-            'rows': rows,
+            "class_obj": classroom,
+            "sessions": Session.objects.filter(classroom=classroom).order_by("start_time"),
+            "students": classroom.students.all(),
+            "assignments": Assignment.objects.filter(course=classroom.course).order_by("-created_at"),
+            "attendances": Attendance.objects.filter(
+                session__classroom=classroom
+            ).select_related('session', 'student', 'marked_by').order_by('-session__start_time'),
+            "submissions": Submission.objects.filter(
+                assignment__course=classroom.course
+            ).select_related("student", "assignment").order_by("-submitted_at")[:20]
         }
+
         return render(request, self.template_name, context)
 
     def post(self, request, classroom_pk):
+        classroom = get_object_or_404(Classroom, pk=classroom_pk)
 
-        classroom = get_object_or_404(Classroom.objects.prefetch_related('students','sessions').select_related('course'), pk=classroom_pk)
-        session_pk = request.POST.get('session')
-        session = None
-        if session_pk:
-            session = classroom.sessions.filter(pk=session_pk).first()
-        else:
-            messages.error(request, 'Session not specified.')
-            return redirect('courses:attendance_class_list')
+        session_id = request.POST.get("session_id")
+        student_id = request.POST.get("student_id")
+        status = request.POST.get("status")
 
-        user = request.user
-        if not (role_of(user) in ('manager','employee') or user == classroom.course.instructor):
-            messages.error(request, 'Permission denied.')
-            return redirect('courses:attendance_class_list')
+        if session_id and student_id:
+            Attendance.objects.update_or_create(
+                session_id=session_id,
+                student_id=student_id,
+                defaults={
+                    "status": status,
+                    "marked_by": request.user
+                }
+            )
 
-        updated = 0
-        created = 0
+        return redirect("courses:classroom_attendance", classroom_pk=classroom.pk)
+
+
+class AttendanceSaveView(LoginRequiredMixin, View):
+    def post(self, request, classroom_pk):
+        classroom = get_object_or_404(Classroom, pk=classroom_pk)
+
+        session_id = request.POST.get("session_id")
+        session = get_object_or_404(Session, id=session_id, classroom=classroom)
+
         for student in classroom.students.all():
-            sid = str(student.pk)
-            status = request.POST.get(f'status_{sid}')
-            note = request.POST.get(f'note_{sid}', '').strip() or None
-            if status is None:
-                continue
-            if getattr(student, 'role', '').lower() != 'student':
-                continue
-            attendance_obj, created_flag = Attendance.objects.get_or_create(session=session, student=student, defaults={
-                'status': status,
-                'note': note,
-                'marked_by': user
-            })
-            if not created_flag:
-                # update
-                attendance_obj.status = status
-                attendance_obj.note = note
-                attendance_obj.marked_by = user
-                attendance_obj.save()
-                updated += 1
-            else:
-                created += 1
-        messages.success(request, f'Attendance updated: {updated}, created: {created}')
-        return redirect('courses:classroom_attendance', classroom_pk=classroom.pk)
+            field = f"status_{student.id}"
+            status = request.POST.get(field)
+
+            if status:
+                Attendance.objects.update_or_create(
+                    session=session,
+                    student=student,
+                    defaults={
+                        "status": status,
+                        "marked_by": request.user,
+                    },
+                )
+
+        return redirect(f"/courses/classes/{classroom.pk}/?session_id={session.id}#attendance")
+
 
 # Session views
 
