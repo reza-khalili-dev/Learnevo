@@ -89,6 +89,10 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
 
         # sessions, students, assignments, submissions, attendances (existing)
         ctx["sessions"] = Session.objects.filter(classroom=classroom).order_by("start_time")
+        session_ids_with_attendance = Attendance.objects.filter(session__classroom=classroom).values_list("session_id", flat=True)
+        for s in ctx["sessions"]:
+            s.has_attendance = s.id in session_ids_with_attendance
+    
         students_qs = classroom.students.all()
         ctx["students"] = students_qs
         ctx["assignments"] = Assignment.objects.filter(course=classroom.course).order_by("-created_at")
@@ -118,7 +122,8 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
 
         ctx['selected_session'] = selected_session
         ctx['attendance_rows'] = attendance_rows
-        # ------------------------------------------------------------------------------
+        
+        
 
         return ctx
 
