@@ -9,7 +9,7 @@
 
     <ul class="nav nav-tabs mt-4">
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#details">Details</a>
+            <a class="nav-link " data-bs-toggle="tab" href="#details">Details</a>
         </li>
 
         <li class="nav-item">
@@ -168,26 +168,43 @@
         <!-- ATTENDANCE TAB -->
         <div class="tab-pane fade" id="attendance">
 
-            <h4>Manage Attendance</h4>
+            <div class="row">
+                
+                <!-- LEFT COLUMN: Sessions List -->
+                <div class="col-md-4">
+                    <h4>Select a Session</h4>
 
-            <h5>Select a Session</h5>
-            <ul class="list-group mb-3">
-                {% for session in sessions %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>
-                            <strong>{{ session.title }}</strong><br>
-                            {{ session.start_time|date:"Y-m-d H:i" }}
-                        </span>
-                        <a href="{% url 'courses:class_detail' class_obj.pk %}?session_id={{ session.id }}#attendance"
-                        class="btn btn-outline-primary btn-sm">Manage</a>
-                    </li>
-                {% endfor %}
-            </ul>
+                    <ul class="list-group mb-3" style="max-height: 450px; overflow-y: auto;">
+                        {% for session in sessions %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <strong>{{ session.title }}</strong><br>
+                                    {{ session.start_time|date:"Y-m-d H:i" }}
+                                </span>
 
-            {% if selected_session %}
-                <hr>
-                {% include "courses/attendance_form.html" %}
-            {% endif %}
+                                <a href="?session_id={{ session.id }}#attendance"
+                                class="btn btn-outline-primary btn-sm">
+                                    Manage
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- RIGHT COLUMN: Attendance Form -->
+                <div class="col-md-8">
+                    {% if selected_session %}
+                        <h4>Mark Attendance — {{ selected_session.title }}</h4>
+                        <hr>
+                        {% include "courses/attendance_form.html" %}
+                    {% else %}
+                        <div class="alert alert-info mt-4">
+                            Please select a session to mark attendance.
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
 
         </div>
 
