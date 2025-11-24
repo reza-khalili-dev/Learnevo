@@ -1,86 +1,144 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block head %}
+<!-- Additional CSS for reports dashboard -->
+<link rel="stylesheet" href="{% static 'courses/css/reports_dashboard.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Attendance Reports</h2>
+            <p class="text-muted mb-0">Manage and view class attendance reports</p>
+        </div>
+        <div class="text-end">
+            <small class="text-muted">{{ classes|length }} classes found</small>
+        </div>
+    </div>
 
-    <h2>Attendance Reports</h2>
-    <p class="text-muted">Select a class or session to view attendance reports.</p>
+    <!-- Search and Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="classSearch" class="form-label">Search Classes</label>
+                    <input type="text" class="form-control" id="classSearch" 
+                           placeholder="Search by class name or course...">
+                </div>
+                <div class="col-md-3">
+                    <label for="sessionFilter" class="form-label">Sessions</label>
+                    <select class="form-select" id="sessionFilter">
+                        <option value="all">All Classes</option>
+                        <option value="with-sessions">With Sessions Only</option>
+                        <option value="no-sessions">No Sessions</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="sortBy" class="form-label">Sort By</label>
+                    <select class="form-select" id="sortBy">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name">Class Name</option>
+                        <option value="sessions">Most Sessions</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <div class="row mt-4">
-
-        <!-- LEFT COLUMN: Classes -->
-        <div class="col-md-6">
-            <h4>Classes</h4>
-            <ul class="list-group mt-3">
-                {% for cls in classes %}
-                    <li class="list-group-item">
-
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <strong>{{ cls.title }}</strong><br>
-                                <small class="text-muted">{{ cls.course.title }}</small>
-                            </div>
-
-                            <a href="{% url 'courses:report_class' cls.id %}" 
-                               class="btn btn-outline-primary btn-sm">
-                                Class Report
-                            </a>
-                        </div>
-
-                        <!-- Sessions under each class -->
-                        {% if cls.sessions.exists %}
-                            <ul class="list-group mt-2">
-                                {% for session in cls.sessions.all %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>
-                                            {{ session.title }}<br>
-                                            <small class="text-muted">
-                                                {{ session.start_time|date:"Y-m-d H:i" }}
-                                            </small>
-                                        </span>
-
-                                        <a href="{% url 'courses:report_session' session.id %}"
-                                           class="btn btn-outline-secondary btn-sm">
-                                            Session Report
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="text-muted mt-2">No sessions available.</p>
+    <!-- Classes Grid -->
+    <div class="row" id="classesContainer">
+        {% for cls in classes %}
+            <div class="col-xl-4 col-lg-6 mb-4 class-item" 
+                 data-class-name="{{ cls.title|lower }} {{ cls.course.title|lower }}"
+                 data-sessions-count="{{ cls.sessions.count }}"
+                 data-start-date="{{ cls.start_date|date:'U' }}">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0 text-truncate" title="{{ cls.title }}">
+                            {{ cls.title }}
+                        </h6>
+                        <span class="badge {% if cls.sessions.count > 0 %}bg-primary{% else %}bg-secondary{% endif %}">
+                            {{ cls.sessions.count }} session{{ cls.sessions.count|pluralize }}
+                        </span>
+                    </div>
+                    
+                    <div class="card-body">
+                        <p class="card-text text-muted small mb-2">
+                            <i class="fas fa-book me-1"></i>{{ cls.course.title }}
+                        </p>
+                        
+                        {% if cls.start_date %}
+                        <p class="card-text small text-muted mb-3">
+                            <i class="fas fa-calendar me-1"></i>
+                            Started {{ cls.start_date|date:"M d, Y" }}
+                        </p>
                         {% endif %}
 
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'courses:report_class' cls.id %}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-bar me-1"></i>Full Class Report
+                            </a>
+                            
+                            {% if cls.sessions.exists %}
+                                <button class="btn btn-outline-secondary btn-sm toggle-sessions" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#sessions-{{ cls.id }}"
+                                        aria-expanded="false">
+                                    <i class="fas fa-list me-1"></i>
+                                    Show Sessions ({{ cls.sessions.count }})
+                                </button>
+                            {% endif %}
+                        </div>
 
-
-        <!-- RIGHT COLUMN: Quick Session Access -->
-        <div class="col-md-6">
-            <h4>Quick Session Reports</h4>
-            <p class="text-muted">View attendance of a specific session instantly.</p>
-
-            <ul class="list-group mt-3" style="max-height: 500px; overflow-y: auto;">
-                {% for session in all_sessions %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>
-                            <strong>{{ session.title }}</strong>
-                            <br>
-                            <small>{{ session.classroom.title }}</small>
-                            <br>
-                            <small class="text-muted">{{ session.start_time|date:"Y-m-d H:i" }}</small>
-                        </span>
-
-                        <a href="{% url 'courses:report_session' session.id %}"
-                           class="btn btn-outline-secondary btn-sm">
-                            View
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-
+                        <!-- Collapsible Sessions Section -->
+                        {% if cls.sessions.exists %}
+                            <div class="collapse mt-3" id="sessions-{{ cls.id }}">
+                                <div class="sessions-container" style="max-height: 200px; overflow-y: auto;">
+                                    <div class="list-group list-group-flush">
+                                        {% for session in cls.sessions.all %}
+                                            <a href="{% url 'courses:report_session' session.id %}"
+                                               class="list-group-item list-group-item-action py-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <div class="fw-medium small">{{ session.title|default:"Untitled Session" }}</div>
+                                                        <div class="text-muted extra-small">
+                                                            {{ session.start_time|date:"M d, Y - H:i" }}
+                                                        </div>
+                                                    </div>
+                                                    <i class="fas fa-chevron-right text-muted"></i>
+                                                </div>
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted mt-2 py-2">
+                                <i class="fas fa-inbox fa-lg mb-2"></i>
+                                <div class="small">No sessions available</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No classes found</h5>
+                    <p class="text-muted">There are no classes available for reporting.</p>
+                </div>
+            </div>
+        {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- JavaScript for reports dashboard -->
+<script src="{% static 'courses/js/reports_dashboard.js' %}"></script>
 {% endblock %}

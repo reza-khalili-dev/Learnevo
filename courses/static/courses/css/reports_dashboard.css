@@ -1,0 +1,23 @@
+.class-item {
+    transition: transform 0.2s ease-in-out;
+}
+.class-item:hover {
+    transform: translateY(-2px);
+}
+.sessions-container::-webkit-scrollbar {
+    width: 4px;
+}
+.sessions-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+.sessions-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+.sessions-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+.extra-small {
+    font-size: 0.75rem;
+}
