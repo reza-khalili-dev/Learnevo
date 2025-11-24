@@ -13,6 +13,7 @@ from django.views import View
 from .utils.pdf_utils import generate_pdf_response
 
 
+
 # Course views
 
 class CoursesDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -20,11 +21,22 @@ class CoursesDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
 
     def test_func(self):
         return self.request.user.role in ["manager", "employee"] 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['courses'] = Course.objects.all()
+        context['courses_count'] = Course.objects.count()
+        context['classes_count'] = Classroom.objects.count()
+        context['sessions_count'] = Session.objects.count()
+        
+        from django.db.models import Count
+        unique_students = Classroom.objects.aggregate(
+            total_students=Count('students', distinct=True)
+        )
+        context['students_count'] = unique_students['total_students']
+        
         return context
-
+    
+    
 class CourseListView(LoginRequiredMixin, ListView):
     model = Course
     template_name = 'courses/course_list.html'

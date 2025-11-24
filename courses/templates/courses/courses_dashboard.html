@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Courses Dashboard{% endblock %}
+{% block title %}Courses Management Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -33,35 +33,15 @@
             </div>
         </div>
 
-        <!-- Sessions -->
+        <!-- Attendance Reports -->
         <div class="col-md-4">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm border-warning">
                 <div class="card-body">
-                    <h5 class="card-title">Sessions</h5>
-                    <p class="card-text">Manage sessions for each classroom.</p>
-                    <a href="{% url 'courses:class_list' %}" class="btn btn-primary">View Sessions</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Assignments -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Assignments</h5>
-                    <p class="card-text">Manage assignments for courses, view submissions.</p>
-                    <a href="{% url 'courses:course_list' %}" class="btn btn-primary">View Assignments</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Submissions -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Submissions</h5>
-                    <p class="card-text">View and grade student submissions.</p>
-                    <a href="{% url 'courses:course_list' %}" class="btn btn-primary">View Submissions</a>
+                    <h5 class="card-title">📊 Attendance Reports</h5>
+                    <p class="card-text">Generate comprehensive attendance reports and PDF exports.</p>
+                    <a href="{% url 'courses:reports_dashboard' %}" class="btn btn-warning">
+                        View Reports
+                    </a>
                 </div>
             </div>
         </div>
