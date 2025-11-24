@@ -1,14 +1,16 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin , UserPassesTestMixin
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 from config import settings
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone 
 from .models import Course, Classroom, Session, Attendance, Assignment, Submission
 from .forms import ClassForm, SessionForm, AttendanceForm, AssignmentForm, SubmissionForm
 from django.forms import modelformset_factory
 from django.contrib import messages
 from django.views import View
+from .utils.pdf_utils import generate_pdf_response
 
 
 # Course views
@@ -87,7 +89,6 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         classroom = self.get_object()
 
-        # sessions, students, assignments, submissions, attendances (existing)
         ctx["sessions"] = Session.objects.filter(classroom=classroom).order_by("start_time")
         session_ids_with_attendance = Attendance.objects.filter(session__classroom=classroom).values_list("session_id", flat=True)
         for s in ctx["sessions"]:
@@ -100,15 +101,14 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
             assignment__course=classroom.course
         ).select_related("student", "assignment").order_by("-submitted_at")[:20]
 
-        # default attendances list (all)
+
         ctx["attendances"] = Attendance.objects.filter(
             session__classroom=classroom
         ).select_related('session', 'student', 'marked_by').order_by('-session__start_time')
 
-        # --- NEW: detect selected session from querystring and build attendance rows ---
-        session_id = self.request.GET.get('session_id') or self.request.GET.get('session')  # accept either param
+        session_id = self.request.GET.get('session_id') or self.request.GET.get('session') 
         selected_session = None
-        attendance_rows = []  # list of dicts: {student, attendance}
+        attendance_rows = []  
         if session_id:
             selected_session = Session.objects.filter(pk=session_id, classroom=classroom).first()
             if selected_session:
@@ -117,7 +117,7 @@ class ClassDetailView(LoginRequiredMixin, DetailView):
                 for student in students_qs:
                     attendance_rows.append({
                         'student': student,
-                        'attendance': existing_map.get(student.pk)  # can be None
+                        'attendance': existing_map.get(student.pk) 
                     })
 
         ctx['selected_session'] = selected_session
@@ -312,7 +312,6 @@ class SessionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "courses/session_form.html"
 
     def get_success_url(self):
-        # after edit go back to the classroom detail (hub)
         return reverse('courses:class_detail', kwargs={"pk": self.object.classroom.pk})
 
     def get_context_data(self, **kwargs):
@@ -502,3 +501,203 @@ class InstructorSessionListView(LoginRequiredMixin, UserPassesTestMixin, ListVie
 
     def test_func(self):
         return self.request.user.role == "Instructor"
+
+
+
+# Reports Views
+
+
+
+class ReportsDashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "courses/reports/reports_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        user = self.request.user
+        if user.role not in ["manager", "employee"]:
+            raise PermissionDenied("You do not have access to reports.")
+
+        ctx["classes"] = Classroom.objects.all().order_by("-start_date")
+        return ctx
+
+class ReportClassView(LoginRequiredMixin, TemplateView):
+    template_name = "courses/reports/report_class.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        class_id = kwargs["class_id"]
+
+        classroom = Classroom.objects.get(pk=class_id)
+        ctx["classroom"] = classroom
+
+        sessions = Session.objects.filter(classroom=classroom).order_by("start_time")
+        ctx["sessions"] = sessions
+
+        students = classroom.students.all().order_by("first_name")
+
+        rows = []
+
+        attendance_qs = Attendance.objects.filter(session__in=sessions)
+
+        attendance_map = {
+            (a.student_id, a.session_id): a.status
+            for a in attendance_qs
+        }
+
+        for student in students:
+            row = {
+                "student": student,
+                "statuses": []
+            }
+
+            for session in sessions:
+                status = attendance_map.get((student.id, session.id), "absent")
+                row["statuses"].append(status)
+
+            rows.append(row)
+
+        ctx["rows"] = rows
+        
+        # Add PDF download URL to context
+        ctx["pdf_url"] = f"/reports/class/{class_id}/pdf/"
+        
+        return ctx
+
+class ReportClassPDFView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        class_id = kwargs["class_id"]
+        
+        # Check permissions
+        if request.user.role not in ["manager", "employee"]:
+            raise PermissionDenied("You do not have access to reports.")
+        
+        classroom = Classroom.objects.get(pk=class_id)
+        sessions = Session.objects.filter(classroom=classroom).order_by("start_time")
+        students = classroom.students.all().order_by("first_name")
+
+        rows = []
+        attendance_qs = Attendance.objects.filter(session__in=sessions)
+
+        attendance_map = {
+            (a.student_id, a.session_id): a.status
+            for a in attendance_qs
+        }
+
+        for student in students:
+            row = {
+                "student": student,
+                "statuses": []
+            }
+
+            for session in sessions:
+                status = attendance_map.get((student.id, session.id), "absent")
+                row["statuses"].append(status)
+
+            rows.append(row)
+
+        context = {
+            "classroom": classroom,
+            "sessions": sessions,
+            "rows": rows,
+            "generated_date": timezone.now()
+        }
+
+        filename = f"attendance_report_{classroom.title.replace(' ', '_')}_{timezone.now().strftime('%Y%m%d')}"
+        return generate_pdf_response("courses/reports/report_class_pdf.html", context, filename)
+    
+    
+class ReportSessionView(LoginRequiredMixin, TemplateView):
+    template_name = "courses/reports/report_session.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        session_id = kwargs["session_id"]
+
+        session = Session.objects.get(pk=session_id)
+        classroom = session.classroom
+
+        ctx["session"] = session
+        ctx["classroom"] = classroom
+
+        students = classroom.students.all().order_by("first_name")
+        
+        attendance_qs = Attendance.objects.filter(session=session)
+
+        attendance_map = {
+            a.student_id: a.status
+            for a in attendance_qs
+        }
+
+        rows = []
+        present_count = 0
+        absent_count = 0
+        
+        for student in students:
+            status = attendance_map.get(student.id, "absent")
+            rows.append({
+                "student": student,
+                "status": status
+            })
+            
+            if status == "present":
+                present_count += 1
+            else:
+                absent_count += 1
+
+        ctx["rows"] = rows
+        ctx["present_count"] = present_count
+        ctx["absent_count"] = absent_count
+        ctx["attendance_rate"] = round((present_count / len(rows)) * 100, 2) if rows else 0
+        
+        # Add PDF download URL to context
+        ctx["pdf_url"] = f"/reports/session/{session_id}/pdf/"
+        
+        return ctx
+
+class ReportSessionPDFView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        session_id = kwargs["session_id"]
+        
+        # Check permissions
+        if request.user.role not in ["manager", "employee"]:
+            raise PermissionDenied("You do not have access to reports.")
+        
+        session = Session.objects.get(pk=session_id)
+        classroom = session.classroom
+        students = classroom.students.all().order_by("first_name")
+        
+        attendance_qs = Attendance.objects.filter(session=session)
+        attendance_map = {
+            a.student_id: a.status
+            for a in attendance_qs
+        }
+
+        rows = []
+        present_count = 0
+        absent_count = 0
+        
+        for student in students:
+            status = attendance_map.get(student.id, "absent")
+            rows.append({
+                "student": student,
+                "status": status
+            })
+            
+            if status == "present":
+                present_count += 1
+            else:
+                absent_count += 1
+
+        context = {
+            "session": session,
+            "classroom": classroom,
+            "rows": rows,
+            "present_count": present_count,
+            "absent_count": absent_count,
+            "attendance_rate": round((present_count / len(rows)) * 100, 2) if rows else 0,
+            "generated_date": timezone.now()
+        }
+
+        filename = f"session_attendance_{session.start_time.strftime('%Y%m%d')}_{classroom.title.replace(' ', '_')}"
+        return generate_pdf_response("courses/reports/report_session_pdf.html", context, filename)

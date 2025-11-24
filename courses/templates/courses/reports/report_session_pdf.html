@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            font-size: 12px;
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center; 
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+        h2 { 
+            color: #7f8c8d; 
+            text-align: center; 
+            margin-top: 0; 
+            font-size: 14px;
+        }
+        h3 {
+            color: #34495e;
+            text-align: center;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #f2f2f2; 
+            font-weight: bold;
+        }
+        .present { 
+            background-color: #d4edda; 
+            color: #155724; 
+        }
+        .absent { 
+            background-color: #f8d7da; 
+            color: #721c24; 
+        }
+        .header-info { 
+            margin-bottom: 20px; 
+            text-align: center; 
+        }
+        .summary { 
+            margin: 20px 0; 
+            padding: 15px; 
+            background-color: #f8f9fa; 
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .summary strong {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-info">
+        <h1>Session Attendance Report</h1>
+        <h2>{{ session.start_time|date:"Y/m/d H:i" }}</h2>
+        <h3>{{ classroom.title }} — {{ classroom.course.title }}</h3>
+        <p>Generated on: {{ generated_date|date:"Y/m/d H:i" }}</p>
+    </div>
+
+    <div class="summary">
+        <strong>Summary:</strong><br>
+        Total Students: {{ rows|length }}<br>
+        Present: {{ present_count }}<br>
+        Absent: {{ absent_count }}<br>
+        Attendance Rate: {{ attendance_rate }}%
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 70%;">Student Name</th>
+                <th style="width: 30%;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.student.get_full_name|default:row.student.email }}</td>
+                    {% if row.status == "present" %}
+                        <td class="present">✓ Present</td>
+                    {% else %}
+                        <td class="absent">✗ Absent</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

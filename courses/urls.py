@@ -63,7 +63,13 @@ urlpatterns = [
     # -------------------------------
     path('attendances/classroom/<int:classroom_pk>/',views.ClassroomAttendanceView.as_view(),name='classroom_attendance'),
     path("classes/<int:classroom_pk>/attendance/save/", views.AttendanceSaveView.as_view(), name="attendance_save"),
-    
-    
-    
+
+    # -------------------------------
+    # Attendance REPORTS
+    # -------------------------------
+    path("reports/", views.ReportsDashboardView.as_view(), name="reports_dashboard"),
+    path("reports/class/<int:class_id>/", views.ReportClassView.as_view(), name="report_class"),
+    path("reports/class/<int:class_id>/pdf/", views.ReportClassPDFView.as_view(), name="report_class_pdf"),
+    path("reports/session/<int:session_id>/", views.ReportSessionView.as_view(), name="report_session"),
+    path("reports/session/<int:session_id>/pdf/", views.ReportSessionPDFView.as_view(), name="report_session_pdf"),
     ]

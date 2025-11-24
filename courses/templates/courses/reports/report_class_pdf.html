@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            font-size: 12px;
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center; 
+            margin-bottom: 5px; 
+            font-size: 18px;
+        }
+        h2 { 
+            color: #7f8c8d; 
+            text-align: center; 
+            margin-top: 0; 
+            font-size: 14px;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+            font-size: 10px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 6px; 
+            text-align: center;
+        }
+        th { 
+            background-color: #f2f2f2; 
+            font-weight: bold;
+        }
+        .present { 
+            background-color: #d4edda; 
+            color: #155724; 
+        }
+        .absent { 
+            background-color: #f8d7da; 
+            color: #721c24; 
+        }
+        .student-name { 
+            text-align: left; 
+            font-weight: bold;
+            width: 20%;
+        }
+        .session-date {
+            width: 8%;
+        }
+        .header-info { 
+            margin-bottom: 20px; 
+            text-align: center; 
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-info">
+        <h1>Attendance Report — {{ classroom.title }}</h1>
+        <h2>{{ classroom.course.title }} | Total Students: {{ rows|length }} | Total Sessions: {{ sessions|length }}</h2>
+        <p>Generated on: {{ generated_date|date:"Y/m/d H:i" }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="student-name">Student Name</th>
+                {% for session in sessions %}
+                    <th class="session-date">{{ session.start_time|date:"m/d" }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td class="student-name">{{ row.student.get_full_name|default:row.student.email }}</td>
+                    {% for status in row.statuses %}
+                        {% if status == "present" %}
+                            <td class="present">✓</td>
+                        {% else %}
+                            <td class="absent">✗</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

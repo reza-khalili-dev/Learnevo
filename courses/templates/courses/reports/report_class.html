@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Attendance Report — {{ classroom.title }}</h3>
+        <a href="{% url 'courses:report_class_pdf' classroom.id %}" class="btn btn-danger">
+            <i class="fas fa-file-pdf"></i> Download PDF
+        </a>
+    </div>
+    
+    <p class="text-muted">{{ classroom.course.title }}</p>
+
+    <table class="table table-bordered table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Student</th>
+                {% for session in sessions %}
+                    <th>{{ session.start_time|date:"m/d" }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.student.get_full_name|default:row.student.email }}</td>
+
+                    {% for status in row.statuses %}
+                        {% if status == "present" %}
+                            <td class="table-success text-center">✓</td>
+                        {% else %}
+                            <td class="table-danger text-center">✗</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}
