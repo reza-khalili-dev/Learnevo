@@ -16,7 +16,7 @@
                     <button type="submit" class="btn btn-success">
                         {% if form.instance.pk %}Update{% else %}Create{% endif %}
                     </button>
-                    <a href="{% url 'courses:session_list' classroom_id=classroom_id %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% url 'courses:class_detail' classroom_id %}" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
         </div>
