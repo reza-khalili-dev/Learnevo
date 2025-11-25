@@ -7,10 +7,9 @@
     <h2>{{ class_obj.title }}</h2>
     <h5 class="text-muted">{{ class_obj.course.title }}</h5>
 
-
     <ul class="nav nav-tabs mt-4">
         <li class="nav-item">
-            <a class="nav-link " data-bs-toggle="tab" href="#details">Details</a>
+            <a class="nav-link active" data-bs-toggle="tab" href="#details">Details</a>
         </li>
 
         <li class="nav-item">
@@ -20,11 +19,9 @@
         <li class="nav-item">
             <a class="nav-link" data-bs-toggle="tab" href="#students">Students</a>
         </li>
-
         
         <li class="nav-item">
             <a class="nav-link" data-bs-toggle="tab" href="#attendance" id="attendance-tab">Attendance</a>
-
         </li>
 
         <li class="nav-item">
@@ -38,8 +35,8 @@
 
     <div class="tab-content mt-3">
 
-        <!-- DETAILS TAB -->
-        <div class="tab-pane fade show " id="details">
+        <!-- DETAILS TAB - Active by default -->
+        <div class="tab-pane fade show active" id="details">
             <table class="table table-bordered">
                 <tr>
                     <th>Title</th>
@@ -258,7 +255,6 @@
 
         <!-- ATTENDANCE TAB -->
         <div class="tab-pane fade" id="attendance">
-
             <div class="row">
                 
                 <!-- LEFT COLUMN: Sessions List -->
@@ -295,11 +291,8 @@
                         </div>
                     {% endif %}
                 </div>
-
             </div>
-
         </div>
-
 
         <!-- SUBMISSIONS TAB -->
         <div class="tab-pane fade" id="submissions">
