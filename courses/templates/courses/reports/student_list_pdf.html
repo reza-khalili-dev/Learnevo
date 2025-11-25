@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 25px;
+            font-size: 12px;
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center; 
+            margin-bottom: 5px; 
+            font-size: 20px;
+        }
+        h2 { 
+            color: #7f8c8d; 
+            text-align: center; 
+            margin-top: 0; 
+            font-size: 14px;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            text-align: left;
+        }
+        th { 
+            background-color: #f2f2f2; 
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .student-info { 
+            margin-bottom: 20px; 
+            text-align: center; 
+        }
+        .summary { 
+            margin: 15px 0; 
+            padding: 12px; 
+            background-color: #f8f9fa; 
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .badge {
+            background-color: #4C9AFF;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+        .summary-box {
+            margin-top: 20px; 
+            padding: 15px; 
+            background-color: #e8f5e8; 
+            border-radius: 5px;
+            border: 1px solid #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="student-info">
+        <h1>Student List — {{ classroom.title }}</h1>
+        <h2>{{ classroom.course.title }} | Total Students: {{ students|length }}</h2>
+        <p>Generated on: {{ generated_date|date:"Y/m/d H:i" }}</p>
+    </div>
+
+    <div class="summary">
+        <strong>Class Information:</strong><br>
+        Instructor: {{ classroom.instructor.get_full_name|default:classroom.instructor.email }}<br>
+        Start Date: {{ classroom.start_date|date:"Y/m/d" }}<br>
+        {% if classroom.end_date %}
+        End Date: {{ classroom.end_date|date:"Y/m/d" }}<br>
+        {% endif %}
+        Capacity: {{ classroom.capacity|default:"Unlimited" }}<br>
+        Current Enrollment: {{ students|length }} students
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 25%;">Student Name</th>
+                <th style="width: 25%;">Email</th>
+                <th style="width: 15%;">Phone</th>
+                <th style="width: 15%;">Join Date</th>
+                <th style="width: 15%;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td><strong>{{ student.get_full_name|default:"No Name" }}</strong></td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.phone_number|default:"—" }}</td>
+                    <td>{{ student.date_joined|date:"Y/m/d" }}</td>
+                    <td class="text-center">
+                        <span style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px;">
+                            Enrolled
+                        </span>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if students %}
+    <div class="summary-box">
+        <strong>📊 Enrollment Summary:</strong><br>
+        • Total Students: <strong>{{ students|length }}</strong><br>
+        {% if classroom.capacity %}
+            • Class Capacity: <strong>{{ classroom.capacity }}</strong><br>
+            • Available Seats: <strong>{{ classroom.capacity|add:0|add:students|length|stringformat:"d"|slice:"1:"|default:0 }}</strong><br>
+            • Enrollment Rate: <strong>{{ students|length|floatformat:0 }}%</strong>
+        {% else %}
+            • Class Capacity: <strong>Unlimited</strong><br>
+            • Enrollment Status: <strong>Open for registration</strong>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="summary-box" style="background-color: #fff3cd; border-color: #ffeaa7;">
+        <strong>⚠️ No Students Enrolled</strong><br>
+        This class currently has no enrolled students. Consider promoting the class or contacting potential students.
+    </div>
+    {% endif %}
+</body>
+</html>

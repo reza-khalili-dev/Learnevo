@@ -116,17 +116,107 @@
 
         <!-- STUDENTS TAB -->
         <div class="tab-pane fade" id="students">
-            <h4>Students</h4>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Students ({{ students|length }})</h4>
+                {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
+                    <a href="{% url 'courses:student_list_pdf' class_obj.id %}" 
+                    class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-pdf me-1"></i>Export PDF
+                    </a>
+                {% endif %}
+            </div>
 
-            <ul class="list-group mt-3">
-                {% for student in students %}
-                    <li class="list-group-item">
-                        {{ student.get_full_name|default:student.email }}
-                    </li>
-                {% empty %}
-                    <li class="list-group-item text-muted">No students enrolled.</li>
-                {% endfor %}
-            </ul>
+            {% if students %}
+                <div class="list-group">
+                    {% for student in students %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <!-- Student Avatar -->
+                                <img src="{% if student.profile.image %}{{ student.profile.image.url }}{% else %}{% static 'profiles/images/default-avatar.png' %}{% endif %}"
+                                    alt="{{ student.get_full_name }}"
+                                    class="rounded-circle me-3"
+                                    width="50" height="50"
+                                    style="object-fit: cover;">
+                                
+                                <!-- Student Info -->
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'users:profile_detail' student.profile.id %}" 
+                                        class="text-decoration-none text-dark fw-bold">
+                                            {{ student.get_full_name|default:student.email }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-envelope me-1"></i>{{ student.email }}
+                                        {% if student.phone_number %}
+                                            • <i class="fas fa-phone me-1"></i>{{ student.phone_number }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                            type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" 
+                                            href="{% url 'users:profile_detail' student.profile.id %}">
+                                                <i class="fas fa-eye me-2"></i>View Profile
+                                            </a>
+                                        </li>
+                                        {% if user.role in "manager employee" %}
+                                        <li>
+                                            <a class="dropdown-item" 
+                                            href="{% url 'users:profile_edit' student.profile.id %}">
+                                                <i class="fas fa-edit me-2"></i>Edit Profile
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#">
+                                                <i class="fas fa-user-times me-2"></i>Remove from Class
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Student Info -->
+                            <div class="mt-2 pt-2 border-top">
+                                <div class="row g-2">
+                                    <div class="col-auto">
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            Joined {{ student.date_joined|date:"M Y" }}
+                                        </span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-graduation-cap me-1"></i>
+                                            Student
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Students Enrolled</h5>
+                    <p class="text-muted">There are no students enrolled in this class yet.</p>
+                    {% if user.role in "manager employee instructor" %}
+                        <a href="#" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-1"></i>Add Students
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
 
         <!-- ASSIGNMENTS TAB -->

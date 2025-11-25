@@ -713,3 +713,39 @@ class ReportSessionPDFView(LoginRequiredMixin, View):
 
         filename = f"session_attendance_{session.start_time.strftime('%Y%m%d')}_{classroom.title.replace(' ', '_')}"
         return generate_pdf_response("courses/reports/report_session_pdf.html", context, filename)
+
+
+
+class StudentListPDFView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        class_id = kwargs["class_id"]
+        
+        # Check permissions
+        if request.user.role not in ["manager", "employee", "instructor"]:
+            raise PermissionDenied("You do not have access to student lists.")
+        
+        classroom = Classroom.objects.get(pk=class_id)
+        
+        # Check if user is instructor of this class
+        if request.user.role == "instructor" and classroom.instructor != request.user:
+            raise PermissionDenied("You can only export student lists for your own classes.")
+        
+        students = classroom.students.all().select_related('profile').order_by('first_name', 'last_name')
+        
+        # Calculate available seats
+        student_count = students.count()
+        capacity = classroom.capacity or 0
+        available_seats = capacity - student_count if capacity > 0 else None
+        enrollment_rate = (student_count / capacity * 100) if capacity > 0 else None
+
+        context = {
+            "classroom": classroom,
+            "students": students,
+            "student_count": student_count,
+            "available_seats": available_seats,
+            "enrollment_rate": enrollment_rate,
+            "generated_date": timezone.now()
+        }
+
+        filename = f"student_list_{classroom.title.replace(' ', '_')}_{timezone.now().strftime('%Y%m%d')}"
+        return generate_pdf_response("courses/reports/student_list_pdf.html", context, filename)

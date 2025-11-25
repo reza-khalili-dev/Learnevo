@@ -70,6 +70,9 @@ urlpatterns = [
     path("reports/", views.ReportsDashboardView.as_view(), name="reports_dashboard"),
     path("reports/class/<int:class_id>/", views.ReportClassView.as_view(), name="report_class"),
     path("reports/class/<int:class_id>/pdf/", views.ReportClassPDFView.as_view(), name="report_class_pdf"),
+    path("reports/class/<int:class_id>/students/pdf/", views.StudentListPDFView.as_view(), name="student_list_pdf"),
     path("reports/session/<int:session_id>/", views.ReportSessionView.as_view(), name="report_session"),
     path("reports/session/<int:session_id>/pdf/", views.ReportSessionPDFView.as_view(), name="report_session_pdf"),
+    
+
     ]
