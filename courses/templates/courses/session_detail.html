@@ -5,8 +5,11 @@
     <p><strong>Classroom:</strong> {{ session.classroom.title }}</p>
     <p><strong>Date:</strong> {{ session.start_time|date:"Y-m-d" }}</p>
     <p><strong>Time:</strong> {{ session.start_time|date:"H:i" }} to {{ session.end_time|date:"H:i" }}</p>
-    <a href="{% url 'courses:session_update' session.pk %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'courses:session_delete' session.pk %}" class="btn btn-danger">Delete</a>
-    <a href="{% url 'courses:session_list' classroom_id=session.classroom.id %}" class="btn btn-secondary">Back</a>
+    
+    <div class="btn-group" role="group">
+        <a href="{% url 'courses:session_update' session.pk %}" class="btn btn-primary">Edit</a>
+        <a href="{% url 'courses:session_delete' session.pk %}" class="btn btn-danger">Delete</a>
+        <a href="{% url 'courses:class_detail' session.classroom.id %}" class="btn btn-secondary">Back to Class</a>
+    </div>
 </div>
 {% endblock %}
