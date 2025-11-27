@@ -15,6 +15,8 @@
         <strong>Summary:</strong> 
         Total Students: {{ rows|length }} | 
         Present: {{ present_count }} | 
+        Late: {{ late_count }} | 
+        Excused: {{ excused_count }} | 
         Absent: {{ absent_count }} | 
         Attendance Rate: {{ attendance_rate }}%
     </div>
@@ -34,6 +36,10 @@
 
                     {% if row.status == "present" %}
                         <td class="table-success text-center">✓ Present</td>
+                    {% elif row.status == "late" %}
+                        <td class="table-warning text-center">⏰ Late</td>
+                    {% elif row.status == "excused" %}
+                        <td class="table-info text-center">⚠️ Excused</td>
                     {% else %}
                         <td class="table-danger text-center">✗ Absent</td>
                     {% endif %}

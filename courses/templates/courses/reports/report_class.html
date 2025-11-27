@@ -28,9 +28,13 @@
 
                     {% for status in row.statuses %}
                         {% if status == "present" %}
-                            <td class="table-success text-center">✓</td>
+                            <td class="table-success text-center" title="Present">✓</td>
+                        {% elif status == "late" %}
+                            <td class="table-warning text-center" title="Late">⏰</td>
+                        {% elif status == "excused" %}
+                            <td class="table-info text-center" title="Excused">⚠️</td>
                         {% else %}
-                            <td class="table-danger text-center">✗</td>
+                            <td class="table-danger text-center" title="Absent">✗</td>
                         {% endif %}
                     {% endfor %}
                 </tr>

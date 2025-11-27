@@ -532,7 +532,8 @@ class ReportsDashboardView(LoginRequiredMixin, TemplateView):
 
         ctx["classes"] = Classroom.objects.all().order_by("-start_date")
         return ctx
-
+    
+    
 class ReportClassView(LoginRequiredMixin, TemplateView):
     template_name = "courses/reports/report_class.html"
 
@@ -549,13 +550,18 @@ class ReportClassView(LoginRequiredMixin, TemplateView):
         students = classroom.students.all().order_by("first_name")
 
         rows = []
-
         attendance_qs = Attendance.objects.filter(session__in=sessions)
 
         attendance_map = {
             (a.student_id, a.session_id): a.status
             for a in attendance_qs
         }
+
+
+        present_count = 0
+        late_count = 0
+        excused_count = 0
+        absent_count = 0
 
         for student in students:
             row = {
@@ -566,12 +572,25 @@ class ReportClassView(LoginRequiredMixin, TemplateView):
             for session in sessions:
                 status = attendance_map.get((student.id, session.id), "absent")
                 row["statuses"].append(status)
+                
+                if status == "present":
+                    present_count += 1
+                elif status == "late":
+                    late_count += 1
+                elif status == "excused":
+                    excused_count += 1
+                else:
+                    absent_count += 1
 
             rows.append(row)
 
         ctx["rows"] = rows
+        ctx["present_count"] = present_count
+        ctx["late_count"] = late_count
+        ctx["excused_count"] = excused_count
+        ctx["absent_count"] = absent_count
+        ctx["total_attendance"] = present_count + late_count  
         
-        # Add PDF download URL to context
         ctx["pdf_url"] = f"/reports/class/{class_id}/pdf/"
         
         return ctx
@@ -580,7 +599,6 @@ class ReportClassPDFView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         class_id = kwargs["class_id"]
         
-        # Check permissions
         if request.user.role not in ["manager", "employee"]:
             raise PermissionDenied("You do not have access to reports.")
         
@@ -596,6 +614,11 @@ class ReportClassPDFView(LoginRequiredMixin, View):
             for a in attendance_qs
         }
 
+        present_count = 0
+        late_count = 0
+        excused_count = 0
+        absent_count = 0
+
         for student in students:
             row = {
                 "student": student,
@@ -605,6 +628,15 @@ class ReportClassPDFView(LoginRequiredMixin, View):
             for session in sessions:
                 status = attendance_map.get((student.id, session.id), "absent")
                 row["statuses"].append(status)
+                
+                if status == "present":
+                    present_count += 1
+                elif status == "late":
+                    late_count += 1
+                elif status == "excused":
+                    excused_count += 1
+                else:
+                    absent_count += 1
 
             rows.append(row)
 
@@ -612,6 +644,11 @@ class ReportClassPDFView(LoginRequiredMixin, View):
             "classroom": classroom,
             "sessions": sessions,
             "rows": rows,
+            "present_count": present_count,
+            "late_count": late_count,
+            "excused_count": excused_count,
+            "absent_count": absent_count,
+            "total_attendance": present_count + late_count,
             "generated_date": timezone.now()
         }
 
@@ -643,6 +680,8 @@ class ReportSessionView(LoginRequiredMixin, TemplateView):
 
         rows = []
         present_count = 0
+        late_count = 0
+        excused_count = 0
         absent_count = 0
         
         for student in students:
@@ -654,15 +693,20 @@ class ReportSessionView(LoginRequiredMixin, TemplateView):
             
             if status == "present":
                 present_count += 1
+            elif status == "late":
+                late_count += 1
+            elif status == "excused":
+                excused_count += 1
             else:
                 absent_count += 1
 
         ctx["rows"] = rows
         ctx["present_count"] = present_count
+        ctx["late_count"] = late_count
+        ctx["excused_count"] = excused_count
         ctx["absent_count"] = absent_count
-        ctx["attendance_rate"] = round((present_count / len(rows)) * 100, 2) if rows else 0
+        ctx["attendance_rate"] = round(((present_count + late_count) / len(rows)) * 100, 2) if rows else 0
         
-        # Add PDF download URL to context
         ctx["pdf_url"] = f"/reports/session/{session_id}/pdf/"
         
         return ctx
@@ -671,7 +715,6 @@ class ReportSessionPDFView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         session_id = kwargs["session_id"]
         
-        # Check permissions
         if request.user.role not in ["manager", "employee"]:
             raise PermissionDenied("You do not have access to reports.")
         
@@ -687,6 +730,8 @@ class ReportSessionPDFView(LoginRequiredMixin, View):
 
         rows = []
         present_count = 0
+        late_count = 0
+        excused_count = 0
         absent_count = 0
         
         for student in students:
@@ -698,6 +743,10 @@ class ReportSessionPDFView(LoginRequiredMixin, View):
             
             if status == "present":
                 present_count += 1
+            elif status == "late":
+                late_count += 1
+            elif status == "excused":
+                excused_count += 1
             else:
                 absent_count += 1
 
@@ -706,8 +755,10 @@ class ReportSessionPDFView(LoginRequiredMixin, View):
             "classroom": classroom,
             "rows": rows,
             "present_count": present_count,
+            "late_count": late_count,
+            "excused_count": excused_count,
             "absent_count": absent_count,
-            "attendance_rate": round((present_count / len(rows)) * 100, 2) if rows else 0,
+            "attendance_rate": round(((present_count + late_count) / len(rows)) * 100, 2) if rows else 0,
             "generated_date": timezone.now()
         }
 

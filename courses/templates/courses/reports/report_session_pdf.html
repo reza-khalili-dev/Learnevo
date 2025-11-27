@@ -44,6 +44,14 @@
             background-color: #d4edda; 
             color: #155724; 
         }
+        .late { 
+            background-color: #fff3cd; 
+            color: #856404; 
+        }
+        .excused { 
+            background-color: #cce7ff; 
+            color: #004085; 
+        }
         .absent { 
             background-color: #f8d7da; 
             color: #721c24; 
@@ -76,6 +84,8 @@
         <strong>Summary:</strong><br>
         Total Students: {{ rows|length }}<br>
         Present: {{ present_count }}<br>
+        Late: {{ late_count }}<br>
+        Excused: {{ excused_count }}<br>
         Absent: {{ absent_count }}<br>
         Attendance Rate: {{ attendance_rate }}%
     </div>
@@ -93,6 +103,10 @@
                     <td>{{ row.student.get_full_name|default:row.student.email }}</td>
                     {% if row.status == "present" %}
                         <td class="present">✓ Present</td>
+                    {% elif row.status == "late" %}
+                        <td class="late">⏰ Late</td>
+                    {% elif row.status == "excused" %}
+                        <td class="excused">⚠️ Excused</td>
                     {% else %}
                         <td class="absent">✗ Absent</td>
                     {% endif %}
