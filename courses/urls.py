@@ -39,7 +39,6 @@ urlpatterns = [
     # -------------------------------
     # Assignments CRUD
     # -------------------------------
-    path('courses/<int:course_pk>/assignments/', views.AssignmentListView.as_view(), name='assignment_list'),
     path('assignments/<int:pk>/', views.AssignmentDetailView.as_view(), name='assignment_detail'),
     path('courses/<int:course_pk>/assignments/create/', views.AssignmentCreateView.as_view(), name='assignment_create'),
     path('assignments/<int:pk>/update/', views.AssignmentUpdateView.as_view(), name='assignment_update'),

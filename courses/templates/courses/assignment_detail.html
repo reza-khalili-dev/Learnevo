@@ -1,21 +1,83 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="container mt-4">
+  <!-- اضافه کردن دکمه برگشت -->
+  <div class="mb-3">
+    <a href="{% url 'courses:class_detail' assignment.course.classes.first.pk %}#assignments" 
+       class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-arrow-left me-1"></i> Back to Assignments
+    </a>
+  </div>
+
   <h2>{{ assignment.title }}</h2>
-  <p>{{ assignment.description }}</p>
-  {% if assignment.attachment %}
-    <p>Attachment: <a href="{{ assignment.attachment.url }}">{{ assignment.attachment.name }}</a></p>
-  {% endif %}
-  <p>Due: {{ assignment.due_date }}</p>
-  <p>Max score: {{ assignment.max_score }}</p>
+  <p class="text-muted">{{ assignment.course.title }}</p>
+  
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Assignment Details</h5>
+      <p>{{ assignment.description|default:"No description provided." }}</p>
+      
+      {% if assignment.attachment %}
+        <p><strong>Attachment:</strong> 
+          <a href="{{ assignment.attachment.url }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-download"></i> Download
+          </a>
+        </p>
+      {% endif %}
+      
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Due Date:</strong> {{ assignment.due_date|date:"Y-m-d H:i"|default:"No due date" }}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Max Score:</strong> {{ assignment.max_score }}</p>
+        </div>
+      </div>
+      
+      {% if classrooms %}
+        <p><strong>Related Classrooms:</strong>
+          {% for classroom in classrooms %}
+            <span class="badge bg-secondary">{{ classroom.title }}</span>
+          {% endfor %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
 
-  {% if user.role == 'Student' %}
-    <a href="{% url 'submission_create' assignment_pk=assignment.pk %}">Submit</a>
-    {% for s in assignment.submissions.filter(student=user) %}
-      <p>Your submission: {{ s.submitted_at }} — Grade: {{ s.grade }}</p>
-    {% endfor %}
+  {% if user.role == 'student' %}
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Your Submission</h5>
+        {% if user_submissions %}
+          {% for s in user_submissions %}
+            <div class="alert alert-info">
+              <strong>Submitted:</strong> {{ s.submitted_at|date:"Y-m-d H:i" }}
+              {% if s.grade %}
+                — <strong>Grade:</strong> {{ s.grade }}/{{ assignment.max_score }}
+              {% else %}
+                — <span class="text-warning">Not graded yet</span>
+              {% endif %}
+              <a href="{% url 'courses:submission_update' s.pk %}" class="btn btn-sm btn-outline-primary float-end">Edit Submission</a>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>You haven't submitted this assignment yet.</p>
+          <a href="{% url 'courses:submission_create' assignment_pk=assignment.pk %}" class="btn btn-primary">Submit Assignment</a>
+        {% endif %}
+      </div>
+    </div>
   {% endif %}
 
-  {% if user == assignment.course.instructor %}
-    <a href="{% url 'submission_list' assignment_pk=assignment.pk %}">View Submissions</a>
+  {% if has_instructor_access %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <h5 class="card-title">Instructor Actions</h5>
+        <a href="{% url 'courses:submission_list' assignment_pk=assignment.pk %}" class="btn btn-primary">
+          <i class="fas fa-list"></i> View All Submissions ({{ assignment.submissions.count }})
+        </a>
+        <a href="{% url 'courses:assignment_update' assignment.pk %}" class="btn btn-outline-secondary">Edit Assignment</a>
+      </div>
+    </div>
   {% endif %}
+</div>
 {% endblock %}

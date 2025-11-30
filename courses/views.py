@@ -377,12 +377,27 @@ class AssignmentDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         assignment = self.get_object()
         user = self.request.user
-        if user == assignment.course.instructor or getattr(user, "role", None) in ("manager", "employee"):
-            ctx["submissions"] = assignment.submissions.select_related("student").all()
-        else:
-            ctx["submissions"] = assignment.submissions.filter(student=user)
-        return ctx
+        
 
+        is_instructor_of_course = assignment.course.classes.filter(instructor=user).exists()
+        has_instructor_access = user.role in ["manager", "employee", "instructor"] and is_instructor_of_course
+        
+
+        if has_instructor_access:
+            ctx["submissions"] = assignment.submissions.select_related("student").all()
+            ctx["user_submissions"] = None
+        else:
+            ctx["user_submissions"] = assignment.submissions.filter(student=user)
+            ctx["submissions"] = None
+            
+
+        ctx["has_instructor_access"] = has_instructor_access
+        ctx["is_instructor_of_course"] = is_instructor_of_course
+        ctx["classrooms"] = assignment.course.classes.all()
+        
+        return ctx
+    
+    
 class AssignmentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Assignment
     form_class = AssignmentForm
@@ -395,10 +410,27 @@ class AssignmentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
     def test_func(self):
         course = get_object_or_404(Course, pk=self.kwargs.get("course_pk"))
-        return self.request.user == course.instructor
+        user = self.request.user
+        
+        if user.role in ["manager", "employee"]:
+            return True
+            
+        if user.role == "instructor":
+            return course.classes.filter(instructor=user).exists()
+            
+        return False
 
     def get_success_url(self):
-        return reverse("assignment_detail", kwargs={"pk": self.object.pk})
+        classroom = self.object.course.classes.first()
+        if classroom:
+            return reverse("courses:class_detail", kwargs={"pk": classroom.pk}) + "#assignments"
+        return reverse("courses:course_detail", kwargs={"pk": self.object.course.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        course = get_object_or_404(Course, pk=self.kwargs.get("course_pk"))
+        context['classroom'] = course.classes.first()
+        return context
 
 class AssignmentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Assignment
@@ -407,10 +439,22 @@ class AssignmentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         assignment = self.get_object()
-        return self.request.user == assignment.course.instructor
+        user = self.request.user
+        
+        if user.role in ["manager", "employee"]:
+            return True
+            
+        if user.role == "instructor":
+            return assignment.course.classes.filter(instructor=user).exists()
+            
+        return False
 
     def get_success_url(self):
-        return reverse("assignment_detail", kwargs={"pk": self.object.pk})
+        classroom = self.object.course.classes.first()
+        if classroom:
+            return reverse("courses:class_detail", kwargs={"pk": classroom.pk}) + "#assignments"
+        return reverse("courses:assignment_detail", kwargs={"pk": self.object.pk})
+
 
 class AssignmentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Assignment
@@ -418,10 +462,23 @@ class AssignmentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         assignment = self.get_object()
-        return self.request.user == assignment.course.instructor
+        user = self.request.user
+        
+        if user.role in ["manager", "employee"]:
+            return True
+            
+        if user.role == "instructor":
+            return assignment.course.classes.filter(instructor=user).exists()
+            
+        return False
 
     def get_success_url(self):
-        return reverse_lazy("assignment_list", kwargs={"course_pk": self.object.course.pk})
+
+        classroom = self.object.course.classes.first()
+        if classroom:
+            return reverse("courses:class_detail", kwargs={"pk": classroom.pk}) + "#assignments"
+        else:
+            return reverse("courses:course_detail", kwargs={"pk": self.object.course.pk})
 
 
 # Submission views

@@ -222,7 +222,7 @@
                 <h4>Assignments</h4>
                 {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
                     <a href="{% url 'courses:assignment_create' course_pk=class_obj.course.pk %}" 
-                       class="btn btn-primary btn-sm">
+                    class="btn btn-primary btn-sm">
                         Add Assignment
                     </a>
                 {% endif %}
@@ -238,12 +238,16 @@
                                 Due: {{ assignment.due_date|date:"Y-m-d H:i"|default:"No due date" }}
                             </small>
                             <div class="mt-2">
-                                <a href="{% url 'courses:assignment_detail' assignment.pk %}" 
-                                   class="btn btn-outline-primary btn-sm">View</a>
-                                {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
-                                    <a href="{% url 'courses:assignment_update' assignment.pk %}" 
-                                       class="btn btn-outline-secondary btn-sm">Edit</a>
-                                {% endif %}
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'courses:assignment_detail' assignment.pk %}" 
+                                    class="btn btn-outline-primary">View</a>
+                                    {% if user.role in "manager employee instructor" or user == class_obj.instructor %}
+                                        <a href="{% url 'courses:assignment_update' assignment.pk %}" 
+                                        class="btn btn-outline-secondary">Edit</a>
+                                        <a href="{% url 'courses:assignment_delete' assignment.pk %}" 
+                                        class="btn btn-outline-danger">Delete</a>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     {% endfor %}

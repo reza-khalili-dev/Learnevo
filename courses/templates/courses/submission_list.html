@@ -15,8 +15,8 @@
         {% else %}
           <span class="badge bg-warning">Not graded</span>
         {% endif %}
-        <a href="{% url 'submission_update' submission.id %}" class="btn btn-sm btn-primary">Edit</a>
-        <a href="{% url 'submission_delete' submission.id %}" class="btn btn-sm btn-danger">Delete</a>
+        <a href="{% url 'courses:submission_update' submission.id %}" class="btn btn-sm btn-primary">Edit</a>
+        <a href="{% url 'courses:submission_delete' submission.id %}" class="btn btn-sm btn-danger">Delete</a>
       </li>
     {% empty %}
       <li class="list-group-item">No submissions yet.</li>

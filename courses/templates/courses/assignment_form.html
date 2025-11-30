@@ -6,7 +6,16 @@
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-success">Save</button>
-    <a href="{% url 'assignment_list' %}" class="btn btn-secondary">Cancel</a>
+    
+    {% if form.instance.pk %}
+      <a href="{% url 'courses:assignment_detail' form.instance.pk %}" class="btn btn-secondary">Cancel</a>
+    {% else %}
+      {% if classroom %}
+        <a href="{% url 'courses:class_detail' classroom.pk %}#assignments" class="btn btn-secondary">Cancel</a>
+      {% else %}
+        <a href="{% url 'courses:course_detail' view.kwargs.course_pk %}" class="btn btn-secondary">Cancel</a>
+      {% endif %}
+    {% endif %}
   </form>
 </div>
 {% endblock %}

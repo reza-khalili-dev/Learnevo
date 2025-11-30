@@ -1,12 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-4">
-  <h2>Delete Assignment</h2>
-  <p>Are you sure you want to delete "{{ object.title }}"?</p>
-  <form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Yes, delete</button>
-    <a href="{% url 'assignment_detail' object.id %}" class="btn btn-secondary">Cancel</a>
-  </form>
+    <div class="card shadow-sm">
+        <div class="card-body text-center">
+            <h2 class="card-title mb-4">Delete Assignment</h2>
+            <p class="mb-4">Are you sure you want to delete "<strong>{{ object.title }}</strong>"?</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Yes, Delete
+                    </button>
+                    <a href="{% url 'courses:assignment_detail' object.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </a>
+                </div>
+            </form>
+            
+            <div class="mt-4 text-muted small">
+                <p><strong>Note:</strong> This action cannot be undone. All submissions for this assignment will also be deleted.</p>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
