@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-user-graduate"></i> 
+            {{ student.get_full_name|default:student.email }}'s Grades
+        </h2>
+        <div class="btn-group">
+            <a href="{% url 'grades:grade_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to All Grades
+            </a>
+            {% if user.role in "manager employee instructor" %}
+            <a href="{% url 'grades:grade_create' %}?student={{ student.id }}" 
+               class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Grade
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- اطلاعات دانش‌آموز -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Student Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Name:</th>
+                            <td>{{ student.get_full_name|default:"Not provided" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ student.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Role:</th>
+                            <td>
+                                <span class="badge bg-info">{{ student.role|title }}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Phone:</th>
+                            <td>{{ student.phone_number|default:"Not provided" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Joined:</th>
+                            <td>{{ student.date_joined|date:"Y-m-d" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Login:</th>
+                            <td>{{ student.last_login|date:"Y-m-d H:i"|default:"Never" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- کارنامه‌ها -->
+    {% if report_cards %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Report Cards</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for rc in report_cards %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ rc.course.title }}</h6>
+                            <p class="card-text">
+                                <span class="badge bg-info">{{ rc.term|title }} {{ rc.year }}</span>
+                                <br>
+                                <small class="text-muted">
+                                    GPA: {{ rc.gpa|floatformat:2 }} | 
+                                    Avg: {{ rc.average_score|floatformat:1 }}
+                                </small>
+                            </p>
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'grades:reportcard_detail' rc.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                                {% if rc.is_published %}
+                                <span class="badge bg-success">Published</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- نمرات بر اساس دوره -->
+    {% if grades_by_course %}
+    <div class="accordion" id="gradesAccordion">
+        {% for course_name, course_grades in grades_by_course.items %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                        type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapse{{ forloop.counter }}" 
+                        aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                        aria-controls="collapse{{ forloop.counter }}">
+                    {{ course_name }}
+                    <span class="badge bg-primary ms-2">{{ course_grades|length }} grades</span>
+                </button>
+            </h2>
+            <div id="collapse{{ forloop.counter }}" 
+                 class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                 aria-labelledby="heading{{ forloop.counter }}" 
+                 data-bs-parent="#gradesAccordion">
+                <div class="accordion-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                    <th>Weight</th>
+                                    <th>Status</th>
+                                    <th>Graded At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in course_grades %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ grade.grade_type|lower }}">
+                                            {{ grade.grade_type|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if grade.assignment %}
+                                        <small>{{ grade.assignment.title }}</small>
+                                        {% elif grade.exam %}
+                                        <small>{{ grade.exam.title }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if grade.percentage >= 80 %}success{% elif grade.percentage >= 60 %}warning{% else %}danger{% endif %}">
+                                            {{ grade.score }}/{{ grade.max_score }}
+                                        </span>
+                                    </td>
+                                    <td>{{ grade.percentage|floatformat:1 }}%</td>
+                                    <td>{{ grade.weight }}</td>
+                                    <td>
+                                        {% if grade.is_published %}
+                                        <span class="badge bg-success">Published</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Draft</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ grade.graded_at|date:"Y-m-d"|default:"-" }}</td>
+                                    <td>
+                                        <a href="{% url 'grades:grade_detail' grade.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-graduation-cap fa-3x mb-3"></i>
+        <h5>No Grades Found</h5>
+        <p class="text-muted">This student doesn't have any grades yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📏 Grading Scales</h2>
+        <a href="{% url 'grades:gradingscale_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Scale
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Available Grading Scales</h5>
+        </div>
+        <div class="card-body">
+            {% if default_scale %}
+            <div class="alert alert-info mb-4">
+                <h6>
+                    <i class="fas fa-star"></i> Default Scale: {{ default_scale.name }}
+                </h6>
+                <p class="mb-0">
+                    {{ default_scale.min_score }} - {{ default_scale.max_score }} scale
+                    {% if default_scale.description %} | {{ default_scale.description }}{% endif %}
+                </p>
+            </div>
+            {% endif %}
+            
+            {% if scales %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Range</th>
+                            <th>Letter Grades</th>
+                            <th>Default</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scale in scales %}
+                        <tr>
+                            <td>
+                                <strong>{{ scale.name }}</strong>
+                                {% if scale.description %}
+                                <br>
+                                <small class="text-muted">{{ scale.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ scale.min_score }} - {{ scale.max_score }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% for letter in scale.letter_grades|slice:":5" %}
+                                    <span class="badge bg-light text-dark border" 
+                                          title="{{ letter.min }} - {{ letter.max }}">
+                                        {{ letter.letter }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if scale.letter_grades|length > 5 %}
+                                    <span class="badge bg-secondary">
+                                        +{{ scale.letter_grades|length|add:"-5" }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if scale.is_default %}
+                                <span class="badge bg-success">Default</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'grades:gradingscale_update' scale.id %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'grades:gradingscale_delete' scale.id %}" 
+                                       class="btn btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-sliders-h fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Grading Scales</h5>
+                <p class="text-muted">Create your first grading scale to define letter grades.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if form.instance.pk %}
+                        <i class="fas fa-edit"></i> Edit Report Card
+                        {% else %}
+                        <i class="fas fa-plus"></i> Create Report Card
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.student|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.course|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.classroom|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.term|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.year|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.is_finalized|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.is_published|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                A report card can only be published after it's finalized.
+                                Published report cards are visible to students.
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Save Report Card
+                                </button>
+                            </div>
+                            <div>
+                                <a href="{% url 'grades:reportcard_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if form.instance.pk %}
+            <!-- پیش‌نمایش -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Preview</h5>
+                </div>
+                <div class="card-body">
+                    <p>Report Card for: <strong>{{ form.instance.student.get_full_name|default:form.instance.student.email }}</strong></p>
+                    <p>Course: <strong>{{ form.instance.course.title }}</strong></p>
+                    <p>Term: <strong>{{ form.instance.term|title }} {{ form.instance.year }}</strong></p>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{% url 'grades:reportcard_detail' form.instance.pk %}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i> View Full Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update classroom options based on course selection
+    const courseField = document.getElementById('id_course');
+    const classroomField = document.getElementById('id_classroom');
+    
+    function updateClassroomOptions() {
+        const courseId = courseField.value;
+        if (courseId) {
+            // اینجا می‌توانید AJAX برای دریافت classroomهای مربوطه اضافه کنید
+            console.log('Selected course:', courseId);
+        }
+    }
+    
+    courseField.addEventListener('change', updateClassroomOptions);
+    updateClassroomOptions();
+});
+</script>
+{% endblock %}

@@ -168,10 +168,6 @@ class Submission(models.Model):
     content = models.TextField(blank=True, null=True)
     file = models.FileField(upload_to=submission_upload_to, null=True, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
-    grade = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-    
-    graded_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name="graded_submissions")
-    graded_at = models.DateTimeField(null=True, blank=True)
     feedback = models.TextField(null=True, blank=True)
 
     class Meta:

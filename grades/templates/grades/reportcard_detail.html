@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📄 Report Card Details</h2>
+        <div class="btn-group">
+            <a href="{% url 'grades:reportcard_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            {% if report_card.is_published %}
+            <a href="{% url 'grades:reportcard_pdf' report_card.id %}" 
+               class="btn btn-danger">
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </a>
+            {% endif %}
+            {% if user.role in "manager employee instructor" and not report_card.is_published %}
+            <form method="post" action="{% url 'grades:reportcard_publish' report_card.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i> Publish Report Card
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- اطلاعات اصلی -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ report_card.course.title }} - Report Card</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Student Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Name:</th>
+                                    <td>{{ report_card.student.get_full_name|default:report_card.student.email }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ report_card.student.email }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Classroom:</th>
+                                    <td>{{ report_card.classroom.title|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Academic Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Term/Year:</th>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ report_card.term|title }} {{ report_card.year }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Course:</th>
+                                    <td>{{ report_card.course.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Instructor:</th>
+                                    <td>{{ report_card.classroom.instructor.get_full_name|default:report_card.classroom.instructor.email }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- خلاصه عملکرد -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 text-center">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Total Grades</h6>
+                                    <h3>{{ report_card.total_grades }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Average Score</h6>
+                                    <h3 class="text-{% if report_card.average_score >= 80 %}success{% elif report_card.average_score >= 60 %}warning{% else %}danger{% endif %}">
+                                        {{ report_card.average_score|floatformat:1 }}
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>GPA</h6>
+                                    <h3 class="text-primary">{{ report_card.gpa|floatformat:2 }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Status</h6>
+                                    <h5>
+                                        {% if report_card.is_published %}
+                                        <span class="badge bg-success">Published</span>
+                                        {% elif report_card.is_finalized %}
+                                        <span class="badge bg-warning">Finalized</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Draft</span>
+                                        {% endif %}
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- جزئیات نمرات -->
+                    <h5 class="mb-3">Grade Details</h5>
+                    {% if grades %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                    <th>Weight</th>
+                                    <th>Graded At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in grades %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ grade.grade_type|lower }}">
+                                            {{ grade.grade_type|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if grade.assignment %}
+                                        <small>{{ grade.assignment.title }}</small>
+                                        {% elif grade.exam %}
+                                        <small>{{ grade.exam.title }}</small>
+                                        {% else %}
+                                        <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if grade.percentage >= 80 %}success{% elif grade.percentage >= 60 %}warning{% else %}danger{% endif %}">
+                                            {{ grade.score }}/{{ grade.max_score }}
+                                        </span>
+                                    </td>
+                                    <td>{{ grade.percentage|floatformat:1 }}%</td>
+                                    <td>{{ grade.weight }}</td>
+                                    <td>{{ grade.graded_at|date:"Y-m-d"|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- توزیع نمرات -->
+                    <div class="mt-4">
+                        <h6>Grade Distribution by Type</h6>
+                        <div class="row">
+                            {% for type, choices in grade_types %}
+                            <div class="col-md-3 mb-2">
+                                <div class="card">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted">{{ type|title }}</small>
+                                        <div>
+                                            {% with count=grades|length %}
+                                            {% with type_count=grades|grade_type_count:type %}
+                                            <small>{{ type_count }} of {{ count }} ({{ type_count|divide:count|multiply:100|floatformat:0 }}%)</small>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar" 
+                                                    data-width="{{ type_count|divide:count|multiply:100 }}"
+                                                    style="width: 0%;"></div>
+                                            </div>
+                                            {% endwith %}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    {% else %}
+                    <div class="alert alert-info">
+                        No grades available for this report card.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- سایدبار -->
+        <div class="col-md-4">
+            <!-- وضعیت -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6>Report Card Status</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Created:</th>
+                            <td>{{ report_card.created_at|date:"Y-m-d" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Updated:</th>
+                            <td>{{ report_card.updated_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Published:</th>
+                            <td>
+                                {% if report_card.is_published %}
+                                {{ report_card.published_at|date:"Y-m-d H:i"|default:"-" }}
+                                {% else %}
+                                <span class="text-muted">Not published</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Finalized:</th>
+                            <td>
+                                {% if report_card.is_finalized %}
+                                <span class="text-success">Yes</span>
+                                {% else %}
+                                <span class="text-warning">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    {% if user.role in "manager employee instructor" %}
+                    <div class="d-grid gap-2">
+                        {% if not report_card.is_finalized %}
+                        <button class="btn btn-warning btn-sm">
+                            <i class="fas fa-lock"></i> Finalize
+                        </button>
+                        {% endif %}
+                        
+                        {% if report_card.is_finalized and not report_card.is_published %}
+                        <form method="post" action="{% url 'grades:reportcard_publish' report_card.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-check"></i> Publish to Student
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- نظر استاد -->
+            <div class="card">
+                <div class="card-header">
+                    <h6>Overall Feedback</h6>
+                </div>
+                <div class="card-body">
+                    {% if report_card.is_published %}
+                    <p class="text-muted">
+                        This report card has been published to the student on 
+                        {{ report_card.published_at|date:"F d, Y" }}.
+                    </p>
+                    
+                    {% if user.role in "manager employee instructor" %}
+                    <textarea class="form-control mb-2" rows="3" 
+                              placeholder="Add overall feedback..."></textarea>
+                    <button class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-comment"></i> Add Feedback
+                    </button>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <small>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            This report card is not yet published. 
+                            The student cannot see it until published.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+});
+</script>
+{% endblock %}

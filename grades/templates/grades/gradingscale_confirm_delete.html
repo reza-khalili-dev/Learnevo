@@ -7,26 +7,36 @@
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
-                        <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                        <i class="fas fa-exclamation-triangle"></i> Delete Grading Scale
                     </h4>
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-4">
-                        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
-                        <h5>Are you sure you want to delete this grade?</h5>
+                        <i class="fas fa-sliders-h fa-4x text-danger mb-3"></i>
+                        <h5>Are you sure you want to delete this grading scale?</h5>
                     </div>
                     
                     <div class="alert alert-warning">
-                        <strong>Grade Details:</strong><br>
-                        Student: {{ object.student.get_full_name|default:object.student.email }}<br>
-                        Course: {{ object.course.title }}<br>
-                        Score: {{ object.score }}/{{ object.max_score }}<br>
-                        Type: {{ object.grade_type|title }}
+                        <strong>Scale Details:</strong><br>
+                        Name: {{ object.name }}<br>
+                        Range: {{ object.min_score }} - {{ object.max_score }}<br>
+                        Letter Grades: {{ object.letter_grades|length }} entries
+                        {% if object.is_default %}
+                        <br>
+                        <span class="text-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            This is the default scale!
+                        </span>
+                        {% endif %}
                     </div>
                     
                     <div class="alert alert-danger">
-                        <strong>Warning:</strong> This action cannot be undone. 
-                        The grade will be permanently removed from the system.
+                        <strong>Warning:</strong><br>
+                        Deleting this scale will affect any grades that reference it.
+                        {% if object.is_default %}
+                        <br>
+                        <strong>This is the default scale - you should set another scale as default first!</strong>
+                        {% endif %}
                     </div>
                     
                     <form method="post">
@@ -35,7 +45,7 @@
                             <button type="submit" class="btn btn-danger btn-lg">
                                 <i class="fas fa-trash"></i> Yes, Delete
                             </button>
-                            <a href="{% url 'grades:grade_detail' object.id %}" 
+                            <a href="{% url 'grades:gradingscale_list' %}" 
                                class="btn btn-secondary btn-lg">
                                 <i class="fas fa-times"></i> Cancel
                             </a>

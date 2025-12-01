@@ -1,12 +1,149 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
+
 {% block content %}
-<h2>{% if form.instance.pk %}Edit Grade{% else %}Add New Grade{% endif %}</h2>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if form.instance.pk %}
+                        <i class="fas fa-edit"></i> Edit Grade
+                        {% else %}
+                        <i class="fas fa-plus"></i> Add New Grade
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.student|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.course|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.assignment|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.exam|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                Select either an Assignment OR an Exam, not both.
+                            </small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.grade_type|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.score|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.max_score|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.weight|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.is_published|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.feedback|as_crispy_field }}
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Save Grade
+                                </button>
+                                <button type="submit" name="save_and_add" value="true" 
+                                        class="btn btn-outline-success">
+                                    Save & Add Another
+                                </button>
+                            </div>
+                            <div>
+                                <a href="{% url 'grades:grade_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save</button>
-</form>
-
-<a href="{% url 'grades:grade_list' %}">Back to List</a>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Disable exam when assignment is selected and vice versa
+    const assignmentField = document.getElementById('id_assignment');
+    const examField = document.getElementById('id_exam');
+    
+    function updateFields() {
+        if (assignmentField.value) {
+            examField.disabled = true;
+        } else if (examField.value) {
+            assignmentField.disabled = true;
+        } else {
+            assignmentField.disabled = false;
+            examField.disabled = false;
+        }
+    }
+    
+    assignmentField.addEventListener('change', updateFields);
+    examField.addEventListener('change', updateFields);
+    updateFields();
+    
+    // Auto-calculate percentage
+    const scoreField = document.getElementById('id_score');
+    const maxScoreField = document.getElementById('id_max_score');
+    
+    function updatePercentage() {
+        const score = parseFloat(scoreField.value) || 0;
+        const maxScore = parseFloat(maxScoreField.value) || 100;
+        
+        if (maxScore > 0) {
+            const percentage = (score / maxScore) * 100;
+            const percentageDisplay = document.getElementById('percentageDisplay') || 
+                                     createPercentageDisplay();
+            percentageDisplay.textContent = `Percentage: ${percentage.toFixed(1)}%`;
+        }
+    }
+    
+    function createPercentageDisplay() {
+        const div = document.createElement('div');
+        div.id = 'percentageDisplay';
+        div.className = 'form-text text-info mt-1';
+        maxScoreField.parentNode.appendChild(div);
+        return div;
+    }
+    
+    scoreField.addEventListener('input', updatePercentage);
+    maxScoreField.addEventListener('input', updatePercentage);
+    updatePercentage();
+});
+</script>
 {% endblock %}

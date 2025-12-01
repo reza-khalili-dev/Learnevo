@@ -1,14 +1,199 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h2>Grade Detail</h2>
-
-<p><strong>Student:</strong> {{ grade.student.email }}</p>
-<p><strong>Assignment:</strong> {{ grade.assignment }}</p>
-<p><strong>Exam:</strong> {{ grade.exam }}</p>
-<p><strong>Score:</strong> {{ grade.score }}</p>
-<p><strong>Max Score:</strong> {{ grade.max_score }}</p>
-
-<a href="{% url 'grades:grade_update' grade.pk %}">Edit</a> |
-<a href="{% url 'grades:grade_delete' grade.pk %}">Delete</a> |
-<a href="{% url 'grades:grade_list' %}">Back to List</a>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Grade Details</h2>
+        <div class="btn-group">
+            <a href="{% url 'grades:grade_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            {% if user.role in "manager employee instructor" %}
+            <a href="{% url 'grades:grade_update' grade.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            {% endif %}
+            {% if user.role in "manager employee" %}
+            <a href="{% url 'grades:grade_delete' grade.id %}" class="btn btn-outline-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- اطلاعات اصلی -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Grade Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Student</h6>
+                            <p>
+                                <a href="{% url 'grades:student_grades' grade.student.id %}">
+                                    {{ grade.student.get_full_name|default:grade.student.email }}
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Course</h6>
+                            <p>{{ grade.course.title }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Grade Type</h6>
+                            <p>
+                                <span class="badge bg-{{ grade.grade_type|lower }}">
+                                    {{ grade.grade_type|title }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Source</h6>
+                            <p>
+                                {% if grade.assignment %}
+                                <i class="fas fa-tasks"></i> Assignment: 
+                                <a href="{% url 'courses:assignment_detail' grade.assignment.id %}">
+                                    {{ grade.assignment.title }}
+                                </a>
+                                {% elif grade.exam %}
+                                <i class="fas fa-file-alt"></i> Exam: 
+                                {{ grade.exam.title }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Score</h6>
+                            <div class="display-4 text-{% if grade.percentage >= 80 %}success{% elif grade.percentage >= 60 %}warning{% else %}danger{% endif %}">
+                                {{ grade.score }}/{{ grade.max_score }}
+                            </div>
+                            <p class="text-muted">{{ grade.percentage|floatformat:1 }}%</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Weight & Letter Grade</h6>
+                            <p>Weight: {{ grade.weight }}</p>
+                            <p>Letter: 
+                                <span class="badge bg-info">
+                                    {{ grade.letter_grade|default:"N/A" }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if grade.feedback %}
+                    <div class="mb-3">
+                        <h6>Feedback</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                {{ grade.feedback|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- سایدبار اطلاعات -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Status & Metadata</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                {% if grade.is_published %}
+                                <span class="badge bg-success">Published</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Draft</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Graded By</th>
+                            <td>
+                                {% if grade.graded_by %}
+                                {{ grade.graded_by.get_full_name|default:grade.graded_by.email }}
+                                {% else %}
+                                <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Graded At</th>
+                            <td>{{ grade.graded_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Created</th>
+                            <td>{{ grade.created_at|date:"Y-m-d" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Updated</th>
+                            <td>{{ grade.updated_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    </table>
+                    
+                    {% if user.role in "manager employee instructor" %}
+                    <div class="d-grid gap-2 mt-3">
+                        {% if grade.is_published %}
+                        <form method="post" action="{% url 'grades:bulk_grade_publish' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="grade_ids" value="{{ grade.id }}">
+                            <button type="submit" name="action" value="unpublish" 
+                                    class="btn btn-warning btn-sm">
+                                <i class="fas fa-eye-slash"></i> Unpublish
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'grades:bulk_grade_publish' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="grade_ids" value="{{ grade.id }}">
+                            <button type="submit" name="action" value="publish" 
+                                    class="btn btn-success btn-sm">
+                                <i class="fas fa-eye"></i> Publish
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- آمار مرتبط -->
+            {% if related_grades %}
+            <div class="card">
+                <div class="card-header">
+                    <h6>Student's Other Grades</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for g in related_grades|slice:":5" %}
+                        <a href="{% url 'grades:grade_detail' g.id %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <span>{{ g.grade_type|title }}</span>
+                                <span class="badge bg-light text-dark">
+                                    {{ g.score }}/{{ g.max_score }}
+                                </span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

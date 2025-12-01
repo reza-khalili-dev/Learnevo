@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">📊 Grades Dashboard</h2>
+    
+    {% if user.role in "manager employee" %}
+    <!-- آمار کلی برای مدیران -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Grades</h5>
+                    <h2 class="card-text">{{ total_grades }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Published</h5>
+                    <h2 class="card-text">{{ published_grades }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Students</h5>
+                    <h2 class="card-text">{{ total_students }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Courses</h5>
+                    <h2 class="card-text">{{ total_courses }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نمودار توزیع نمرات -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Grade Distribution by Type</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Count</th>
+                        <th>Average Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in grade_distribution %}
+                    <tr>
+                        <td>{{ item.grade_type|title }}</td>
+                        <td>{{ item.count }}</td>
+                        <td>{{ item.avg_score|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">No grades data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% elif user.role == "instructor" %}
+    <!-- داشبورد استاد -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">My Courses</h5>
+                    <h2 class="card-text">{{ my_courses.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Total Grades</h5>
+                    <h2 class="card-text">{{ total_grades }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">To Publish</h5>
+                    <h2 class="card-text">{{ unpublished_grades }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- دوره‌های استاد -->
+    <div class="card">
+        <div class="card-header">
+            <h5>My Courses</h5>
+        </div>
+        <div class="card-body">
+            <div class="list-group">
+                {% for course in my_courses %}
+                <a href="{% url 'grades:grade_list' %}?course={{ course.id }}" 
+                   class="list-group-item list-group-item-action">
+                    {{ course.title }}
+                    <span class="badge bg-primary float-end">
+                        {{ course.grades.count }} grades
+                    </span>
+                </a>
+                {% empty %}
+                <div class="text-center py-3">
+                    <p class="text-muted">No courses assigned</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    {% elif user.role == "student" %}
+    <!-- داشبورد دانش‌آموز -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">My Grades</h5>
+                    <h2 class="card-text">{{ my_grades }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Report Cards</h5>
+                    <h2 class="card-text">{{ my_report_cards }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Overall GPA</h5>
+                    <h2 class="card-text">{{ overall_gpa|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نمرات اخیر -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Recent Grades</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_grades %}
+            <div class="list-group">
+                {% for grade in recent_grades %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6>{{ grade.course.title }}</h6>
+                            <small class="text-muted">
+                                {{ grade.grade_type|title }}
+                                {% if grade.assignment %} - {{ grade.assignment.title }}{% endif %}
+                                {% if grade.exam %} - {{ grade.exam.title }}{% endif %}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{% if grade.score >= grade.max_score|multiply:0.8 %}success{% elif grade.score >= grade.max_score|multiply:0.6 %}warning{% else %}danger{% endif %} fs-6">
+                                {{ grade.score }}/{{ grade.max_score }}
+                            </span>
+                            <br>
+                            <small class="text-muted">{{ grade.graded_at|date:"Y-m-d" }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="text-muted">No grades yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% endif %}
+</div>
+{% endblock %}

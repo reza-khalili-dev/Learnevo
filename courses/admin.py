@@ -6,7 +6,7 @@ from .models import Course, Classroom, Session, Attendance, Assignment, Submissi
 from users.models import CustomUser
 
 # ----------------------------
-# Session Inline برای نمایش در Classroom
+# Session Inline for Classroom
 # ----------------------------
 class SessionInline(admin.TabularInline):
     model = Session
@@ -14,7 +14,7 @@ class SessionInline(admin.TabularInline):
     fields = ('title', 'start_time', 'end_time')
 
 # ----------------------------
-# Attendance Inline برای نمایش در Session
+# Attendance Inline for Session
 # ----------------------------
 class AttendanceInline(admin.TabularInline):
     model = Attendance
@@ -25,14 +25,14 @@ class AttendanceInline(admin.TabularInline):
     def get_formset(self, request, obj=None, **kwargs):
         formset = super().get_formset(request, obj, **kwargs)
 
-        if obj:  # وقتی Session موجود است
+        if obj:  
             class _AttendanceForm(forms.ModelForm):
                 class Meta:
                     model = Attendance
                     fields = "__all__"
                 def __init__(self, *args, **kwargs):
                     super().__init__(*args, **kwargs)
-                    # فقط دانش‌آموزان کلاس مربوطه
+                    
                     self.fields["student"].queryset = obj.classroom.students.all()
 
             formset.form = _AttendanceForm
@@ -41,13 +41,15 @@ class AttendanceInline(admin.TabularInline):
 # ----------------------------
 # Course Admin
 # ----------------------------
+@admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'created_at', 'updated_at']
+    search_fields = ['title', 'description']
+    
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "instructor":
             kwargs["queryset"] = CustomUser.objects.filter(role="instructor")
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-admin.site.register(Course, CourseAdmin)
 
 # ----------------------------
 # Classroom Admin
@@ -80,7 +82,6 @@ class SessionAdmin(admin.ModelAdmin):
 # Attendance Admin (Updated)
 # ----------------------------
 def role_of(user):
-    """تبدیل نقش به lowercase برای مقایسه امن"""
     try:
         return (user.role or '').lower()
     except Exception:
@@ -94,7 +95,6 @@ class AttendanceAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # فیلتر دانش‌آموزان فقط از کلاس مرتبط
         if self.instance and self.instance.pk:
             classroom = self.instance.session.classroom
             self.fields["student"].queryset = classroom.students.all()
@@ -115,13 +115,11 @@ class AttendanceAdmin(admin.ModelAdmin):
     readonly_fields = ("marked_by", "marked_at")
 
     def save_model(self, request, obj, form, change):
-        """وقتی حضور ثبت میشه، کاربر فعلی رو به عنوان marked_by ذخیره کن"""
         if not obj.marked_by_id:
             obj.marked_by = request.user
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
-        """مدیرها و کارمندان همه حضورها رو می‌بینن، مدرس فقط کلاس‌های خودش"""
         qs = super().get_queryset(request)
         user = request.user
         user_role = role_of(user)
@@ -130,10 +128,7 @@ class AttendanceAdmin(admin.ModelAdmin):
             return qs
         if user_role == "instructor":
             return qs.filter(session__classroom__course__instructor=user)
-        return qs.none()  # سایر نقش‌ها نمی‌بینن
-
-
-
+        return qs.none()  
 
 # ----------------------------
 # Assignment Admin
@@ -146,11 +141,61 @@ class AssignmentAdmin(admin.ModelAdmin):
     raw_id_fields = ("course", "session")
 
 # ----------------------------
-# Submission Admin
+# Submission Admin (Updated)
 # ----------------------------
 @admin.register(Submission)
 class SubmissionAdmin(admin.ModelAdmin):
-    list_display = ("assignment", "student", "submitted_at", "grade", "graded_by")
-    list_filter = ("assignment__course",)
-    search_fields = ("student__email", "student__first_name", "student__last_name", "assignment__title")
-    readonly_fields = ("submitted_at", "graded_at")
+    list_display = ("assignment", "student", "submitted_at", "has_attachment", "feedback_preview", "grade_link")
+    list_filter = ("assignment__course", "submitted_at")
+    search_fields = ("student__email", "student__first_name", "student__last_name", "assignment__title", "feedback")
+    readonly_fields = ("assignment", "student", "submitted_at", "grade_link_display")
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('assignment', 'student', 'submitted_at')
+        }),
+        ('Submission Content', {
+            'fields': ('content', 'file', 'feedback')
+        }),
+        ('Related Grade', {
+            'fields': ('grade_link_display',),
+            'description': 'Grade information is now managed in the Grades app'
+        }),
+    )
+    
+    def has_attachment(self, obj):
+        return bool(obj.file)
+    has_attachment.boolean = True
+    has_attachment.short_description = 'Attachment'
+    
+    def feedback_preview(self, obj):
+        return (obj.feedback[:50] + '...') if obj.feedback and len(obj.feedback) > 50 else (obj.feedback or '')
+    feedback_preview.short_description = 'Feedback'
+    
+    def grade_link(self, obj):
+
+        from grades.models import Grade
+        grade = Grade.objects.filter(
+            student=obj.student,
+            assignment=obj.assignment
+        ).first()
+        
+        if grade:
+            url = reverse('admin:grades_grade_change', args=[grade.id])
+            return format_html('<a href="{}">View Grade ({}/{})</a>', 
+                             url, grade.score, grade.max_score)
+        else:
+            url = reverse('admin:grades_grade_add')
+            return format_html('<a href="{}?student={}&assignment={}" class="button">Add Grade</a>', 
+                             url, obj.student.id, obj.assignment.id)
+    grade_link.short_description = 'Grade'
+    
+    def grade_link_display(self, obj):
+
+        return self.grade_link(obj)
+    grade_link_display.short_description = 'Related Grade'
+    grade_link_display.allow_tags = True
+    
+    def get_queryset(self, request):
+
+        return super().get_queryset(request).select_related('assignment', 'student')

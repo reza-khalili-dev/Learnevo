@@ -1,33 +1,229 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
+
 {% block content %}
-<h2>Grades</h2>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📝 Grades Management</h2>
+        {% if user.role in "manager employee instructor" %}
+        <a href="{% url 'grades:grade_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Grade
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- فیلترها -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ filter_form.course|as_crispy_field }}
+                </div>
+                <div class="col-md-3">
+                    {{ filter_form.grade_type|as_crispy_field }}
+                </div>
+                <div class="col-md-3">
+                    {{ filter_form.student|as_crispy_field }}
+                </div>
+                <div class="col-md-3">
+                    {{ filter_form.is_published|as_crispy_field }}
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{% url 'grades:grade_list' %}" class="btn btn-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- لیست نمرات -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Grades List ({{ grades.paginator.count }})</h5>
+            {% if user.role in "manager employee instructor" %}
+            <form method="post" action="{% url 'grades:bulk_grade_publish' %}" id="bulkForm">
+                {% csrf_token %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAll()">
+                        Select All
+                    </button>
+                    <button type="submit" name="action" value="publish" class="btn btn-success btn-sm">
+                        Publish Selected
+                    </button>
+                    <button type="submit" name="action" value="unpublish" class="btn btn-warning btn-sm">
+                        Unpublish Selected
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if grades %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            {% if user.role in "manager employee instructor" %}
+                            <th width="50">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleAll(this)">
+                            </th>
+                            {% endif %}
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Type</th>
+                            <th>Source</th>
+                            <th>Score</th>
+                            <th>Published</th>
+                            <th>Graded At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade in grades %}
+                        <tr>
+                            {% if user.role in "manager employee instructor" %}
+                            <td>
+                                <input type="checkbox" name="grade_ids" value="{{ grade.id }}" 
+                                       class="grade-checkbox">
+                            </td>
+                            {% endif %}
+                            <td>
+                                <a href="{% url 'grades:student_grades' grade.student.id %}">
+                                    {{ grade.student.get_full_name|default:grade.student.email }}
+                                </a>
+                            </td>
+                            <td>{{ grade.course.title }}</td>
+                            <td>
+                                <span class="badge bg-{{ grade.grade_type|lower }}">
+                                    {{ grade.grade_type|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if grade.assignment %}
+                                <small>Assignment: {{ grade.assignment.title|truncatechars:30 }}</small>
+                                {% elif grade.exam %}
+                                <small>Exam: {{ grade.exam.title|truncatechars:30 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if grade.percentage >= 80 %}success{% elif grade.percentage >= 60 %}warning{% else %}danger{% endif %}">
+                                    {{ grade.score }}/{{ grade.max_score }}
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ grade.percentage|floatformat:1 }}%</small>
+                            </td>
+                            <td>
+                                {% if grade.is_published %}
+                                <span class="badge bg-success">Published</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Draft</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ grade.graded_at|date:"Y-m-d"|default:"-" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'grades:grade_detail' grade.id %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.role in "manager employee instructor" %}
+                                    <a href="{% url 'grades:grade_update' grade.id %}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if user.role in "manager employee" %}
+                                    <a href="{% url 'grades:grade_delete' grade.id %}" 
+                                       class="btn btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if grades.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if grades.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ grades.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in grades.paginator.page_range %}
+                    {% if grades.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if grades.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ grades.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Grades Found</h5>
+                <p class="text-muted">Try changing your filters or add new grades.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Student</th>
-        <th>Assignment</th>
-        <th>Exam</th>
-        <th>Score</th>
-        <th>Max Score</th>
-        <th>Actions</th>
-    </tr>
-    {% for grade in grades %}
-    <tr>
-        <td>{{ grade.student.email }}</td>
-        <td>{{ grade.assignment }}</td>
-        <td>{{ grade.exam }}</td>
-        <td>{{ grade.score }}</td>
-        <td>{{ grade.max_score }}</td>
-        <td>
-            <a href="{% url 'grades:grade_detail' grade.pk %}">View</a> |
-            <a href="{% url 'grades:grade_update' grade.pk %}">Edit</a> |
-            <a href="{% url 'grades:grade_delete' grade.pk %}">Delete</a>
-        </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6">No grades found.</td></tr>
-    {% endfor %}
-</table>
+<script>
+function toggleAll(source) {
+    const checkboxes = document.getElementsByClassName('grade-checkbox');
+    for (let checkbox of checkboxes) {
+        checkbox.checked = source.checked;
+    }
+}
 
-<a href="{% url 'grades:grade_create' %}">+ Add New Grade</a>
+function selectAll() {
+    const checkboxes = document.getElementsByClassName('grade-checkbox');
+    for (let checkbox of checkboxes) {
+        checkbox.checked = true;
+    }
+    document.getElementById('selectAllCheckbox').checked = true;
+}
+
+// اعتبارسنجی فرم bulk
+document.getElementById('bulkForm').addEventListener('submit', function(e) {
+    const checkboxes = document.getElementsByName('grade_ids');
+    const checked = Array.from(checkboxes).some(cb => cb.checked);
+    
+    if (!checked) {
+        e.preventDefault();
+        alert('Please select at least one grade.');
+    }
+});
+</script>
+
+<style>
+.badge.bg-assignment { background-color: #17a2b8; }
+.badge.bg-quiz { background-color: #28a745; }
+.badge.bg-midterm { background-color: #ffc107; color: #000; }
+.badge.bg-final { background-color: #dc3545; }
+.badge.bg-sessional { background-color: #6f42c1; }
+.badge.bg-participation { background-color: #20c997; }
+.badge.bg-project { background-color: #fd7e14; }
+</style>
 {% endblock %}
