@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Dashboard - LearnEvo{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'books/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Page Header -->
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-0">📚 Book Management Dashboard</h1>
+                        <p class="text-muted mb-0">Manage books, inventory, and orders in one place</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'books:book_add' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add New Book
+                        </a>
+                        <a href="{% url 'books:book_list' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-list me-2"></i>View All Books
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-start border-primary border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value text-primary">{{ total_books }}</div>
+                                <div class="stat-label">Total Books</div>
+                            </div>
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                <i class="fas fa-book"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-start border-success border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value text-success">${{ inventory_value|floatformat:2 }}</div>
+                                <div class="stat-label">Inventory Value</div>
+                            </div>
+                            <div class="stat-icon bg-success bg-opacity-10 text-success">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-start border-warning border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value text-warning">{{ low_stock_books }}</div>
+                                <div class="stat-label">Low Stock Books</div>
+                            </div>
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-start border-info border-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value text-info">{{ today_orders }}</div>
+                                <div class="stat-label">Today's Orders</div>
+                            </div>
+                            <div class="stat-icon bg-info bg-opacity-10 text-info">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Search -->
+        <div class="row mb-4">
+            <div class="col-lg-8 mb-4">
+                <div class="search-panel card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Advanced Search</h5>
+                        <button class="btn btn-sm btn-outline-secondary" id="searchToggleBtn">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="card-body" id="searchPanel">
+                        <form method="GET" action="{% url 'books:book_search' %}" class="row g-3">
+                            <div class="col-md-6">
+                                <label for="q" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="q" name="q" 
+                                       placeholder="Search by title, author, or description..."
+                                       value="{{ search_params.q|default:'' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="book_type" class="form-label">Book Type</label>
+                                <select class="form-select" id="book_type" name="book_type">
+                                    <option value="">All Types</option>
+                                    <option value="digital" {% if search_params.book_type == 'digital' %}selected{% endif %}>Digital</option>
+                                    <option value="physical" {% if search_params.book_type == 'physical' %}selected{% endif %}>Physical</option>
+                                    <option value="both" {% if search_params.book_type == 'both' %}selected{% endif %}>Both</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">All Categories</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}" 
+                                            {% if search_params.category == category.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="min_price" class="form-label">Min Price</label>
+                                <input type="number" class="form-control" id="min_price" name="min_price" 
+                                       min="0" step="0.01" value="{{ search_params.min_price|default:'' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="max_price" class="form-label">Max Price</label>
+                                <input type="number" class="form-control" id="max_price" name="max_price" 
+                                       min="0" step="0.01" value="{{ search_params.max_price|default:'' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">All Status</option>
+                                    <option value="active" {% if search_params.status == 'active' %}selected{% endif %}>Active</option>
+                                    <option value="inactive" {% if search_params.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                    <option value="out_of_stock" {% if search_params.status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="in_stock" class="form-label">In Stock</label>
+                                <select class="form-select" id="in_stock" name="in_stock">
+                                    <option value="">All</option>
+                                    <option value="yes" {% if search_params.in_stock == 'yes' %}selected{% endif %}>Yes</option>
+                                    <option value="no" {% if search_params.in_stock == 'no' %}selected{% endif %}>No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="sort_by" class="form-label">Sort By</label>
+                                <select class="form-select" id="sort_by" name="sort_by">
+                                    <option value="-created_at" {% if search_params.sort_by == '-created_at' %}selected{% endif %}>Newest First</option>
+                                    <option value="created_at" {% if search_params.sort_by == 'created_at' %}selected{% endif %}>Oldest First</option>
+                                    <option value="title" {% if search_params.sort_by == 'title' %}selected{% endif %}>Title A-Z</option>
+                                    <option value="-title" {% if search_params.sort_by == '-title' %}selected{% endif %}>Title Z-A</option>
+                                    <option value="price" {% if search_params.sort_by == 'price' %}selected{% endif %}>Price Low-High</option>
+                                    <option value="-price" {% if search_params.sort_by == '-price' %}selected{% endif %}>Price High-Low</option>
+                                    <option value="stock" {% if search_params.sort_by == 'stock' %}selected{% endif %}>Stock Low-High</option>
+                                    <option value="-stock" {% if search_params.sort_by == '-stock' %}selected{% endif %}>Stock High-Low</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-2"></i>Search
+                                    </button>
+                                    <a href="{% url 'books:dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Clear
+                                    </a>
+                                    <button type="button" class="btn btn-outline-success ms-auto" id="exportBtn">
+                                        <i class="fas fa-file-excel me-2"></i>Export to Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4">
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-12">
+                        <div class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#quickOrderModal">
+                            <div class="quick-action-icon text-primary">
+                                <i class="fas fa-cart-plus"></i>
+                            </div>
+                            <div class="fw-bold">Quick Order</div>
+                            <small class="text-muted">Create new order</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-12">
+                        <div class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#quickReturnModal">
+                            <div class="quick-action-icon text-warning">
+                                <i class="fas fa-undo"></i>
+                            </div>
+                            <div class="fw-bold">Return Book</div>
+                            <small class="text-muted">Process returns</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Books & Top Sellers -->
+        <div class="row mb-4">
+            <div class="col-lg-8 mb-4">
+                <div class="card dashboard-table">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recently Added Books</h5>
+                        <a href="{% url 'books:book_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if recent_books %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th width="50">Cover</th>
+                                        <th>Title</th>
+                                        <th>Author</th>
+                                        <th>Type</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for book in recent_books %}
+                                    <tr>
+                                        <td>
+                                            {% if book.image %}
+                                            <img src="{{ book.image.url }}" alt="{{ book.title }}" 
+                                                 class="book-cover" loading="lazy">
+                                            {% else %}
+                                            <div class="book-cover d-flex align-items-center justify-content-center bg-light">
+                                                <i class="fas fa-book text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="book-title">{{ book.title|truncatechars:40 }}</div>
+                                            {% if book.category %}
+                                            <span class="badge badge-outline badge-outline-primary">{{ book.category.name }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ book.author|truncatechars:20 }}</td>
+                                        <td>
+                                            {% if book.book_type == "digital" %}
+                                            <span class="badge bg-info">Digital</span>
+                                            {% elif book.book_type == "physical" %}
+                                            <span class="badge bg-warning">Physical</span>
+                                            {% else %}
+                                            <span class="badge bg-primary">Both</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="book-price">${{ book.price }}</td>
+                                        <td>
+                                            <span class="book-stock stock-{{ book.stock_status }}">
+                                                {{ book.stock }} in stock
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'books:book_detail' book.pk %}" 
+                                                   class="btn btn-outline-primary" 
+                                                   data-bs-toggle="tooltip" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'books:book_edit' book.pk %}" 
+                                                   class="btn btn-outline-secondary"
+                                                   data-bs-toggle="tooltip" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button class="btn btn-outline-success quick-order-btn"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#quickOrderModal"
+                                                        data-book-id="{{ book.id }}"
+                                                        data-book-title="{{ book.title }}"
+                                                        data-bs-toggle="tooltip" title="Quick Order">
+                                                    <i class="fas fa-cart-plus"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <h5>No Books Yet</h5>
+                            <p>Add your first book to get started</p>
+                            <a href="{% url 'books:book_add' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Book
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Top Selling Books</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if top_books %}
+                        <div class="list-group list-group-flush">
+                            {% for book in top_books %}
+                            <div class="list-group-item border-0 px-0 py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        {% if book.image %}
+                                        <img src="{{ book.image.url }}" alt="{{ book.title }}" 
+                                             class="book-cover" loading="lazy">
+                                        {% else %}
+                                        <div class="book-cover d-flex align-items-center justify-content-center bg-light">
+                                            <i class="fas fa-book text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="book-title">{{ book.title|truncatechars:25 }}</div>
+                                            <span class="badge bg-success">{{ book.total_sold }} sold</span>
+                                        </div>
+                                        <div class="book-author">{{ book.author|truncatechars:20 }}</div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="book-price">${{ book.price }}</span>
+                                            <small class="text-muted">Stock: {{ book.stock }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-2x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No sales data yet</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card dashboard-table">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Recent Orders</h5>
+                        <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-outline-primary">View All Orders</a>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if recent_orders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Books</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in recent_orders %}
+                                    <tr>
+                                        <td><strong>#{{ order.id }}</strong></td>
+                                        <td>{{ order.user.email|truncatechars:25 }}</td>
+                                        <td>
+                                            {% for item in order.items.all|slice:":2" %}
+                                            <span class="badge bg-light text-dark">{{ item.book.title|truncatechars:15 }} ×{{ item.quantity }}</span>
+                                            {% endfor %}
+                                            {% if order.items.count > 2 %}
+                                            <span class="badge bg-secondary">+{{ order.items.count|add:"-2" }} more</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold">${{ order.total }}</td>
+                                        <td>
+                                            <span class="order-status status-{{ order.status }}">
+                                                {{ order.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'orders:order_detail' order.pk %}" 
+                                                   class="btn btn-outline-primary"
+                                                   data-bs-toggle="tooltip" title="View Order">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if order.status == "pending" %}
+                                                <a href="{% url 'orders:order_pay' order.pk %}" 
+                                                   class="btn btn-outline-success"
+                                                   data-bs-toggle="tooltip" title="Process Payment">
+                                                    <i class="fas fa-credit-card"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% with order.items.all|first as first_item %}
+                                                {% if first_item.book.is_physical %}
+                                                <button class="btn btn-outline-warning quick-return-btn"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#quickReturnModal"
+                                                        data-order-item-id="{{ first_item.id }}"
+                                                        data-order-id="{{ order.id }}"
+                                                        data-book-title="{{ first_item.book.title }}"
+                                                        data-max-quantity="{{ first_item.quantity }}"
+                                                        data-bs-toggle="tooltip" title="Return Item">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                                {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <h5>No Orders Yet</h5>
+                            <p>Orders will appear here when customers make purchases</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Order Modal -->
+<div class="modal fade" id="quickOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickOrderForm" action="{% url 'books:quick_order' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Book</label>
+                        <input type="text" class="form-control" id="modalBookTitle" readonly>
+                        <input type="hidden" name="book_id" id="book_id">
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_id" class="form-label">Customer (Optional)</label>
+                        <select class="form-select" id="customer_id" name="customer_id">
+                            <option value="">Select Customer</option>
+                            <!-- In a real app, you would populate this with actual users -->
+                            <option value="{{ request.user.id }}">Current User ({{ request.user.email }})</option>
+                        </select>
+                        <small class="text-muted">Leave empty to use current user</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Return Modal -->
+<div class="modal fade" id="quickReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnModalTitle">Return Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickReturnForm" action="{% url 'books:return_book' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="order_item_id" id="order_item_id">
+                    
+                    <div class="mb-3">
+                        <label for="return_quantity" class="form-label">Quantity to Return</label>
+                        <input type="number" class="form-control" id="return_quantity" name="quantity" value="1" min="1">
+                        <small class="text-muted">Enter the number of items being returned</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason for Return</label>
+                        <select class="form-select" id="reason" name="reason">
+                            <option value="damaged">Damaged Product</option>
+                            <option value="wrong_item">Wrong Item Shipped</option>
+                            <option value="customer_change_mind">Customer Changed Mind</option>
+                            <option value="defective">Defective Product</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" name="notes" rows="2" placeholder="Any additional notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Process Return</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'books/js/dashboard.js' %}"></script>
+{% endblock %}

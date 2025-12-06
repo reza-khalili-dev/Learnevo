@@ -1,24 +1,18 @@
 from django.contrib import admin
-from .models import Book
+from .models import Book, BookCategory
 
-# Register your models here.
+@admin.register(BookCategory)
+class BookCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'book_count', 'created_at')
+    search_fields = ('name',)
+    
+    def book_count(self, obj):
+        return obj.books.count()
+    book_count.short_description = 'Number of Books'
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ("title", "author", "book_type", "price", "stock", "is_physical", "created_at")
-    search_fields = ("title", "author")
-    list_filter = ("book_type", "shipping_available", "created_at")
-    
-    fieldsets = (
-        ("Basic Information", {
-            "fields": ("title", "author", "description", "price")
-        }),
-        ("Book Details", {
-            "fields": ("book_type", "file", "external_link", "stock", "shipping_available")
-        }),
-        ("Uploader & Time", {
-            "fields": ("uploaded_by", "created_at", "updated_at")
-        }),
-    )
-
-    readonly_fields = ("created_at", "updated_at")
+    list_display = ('title', 'author', 'book_type', 'price', 'stock', 'status', 'category')
+    list_filter = ('book_type', 'status', 'category')
+    search_fields = ('title', 'author', 'description')
+    list_editable = ('price', 'stock', 'status')

@@ -1,0 +1,261 @@
+/* Dashboard Styles */
+.dashboard-wrapper {
+    min-height: calc(100vh - 70px);
+    background-color: #f8f9fa;
+}
+
+/* Stats Cards */
+.stat-card {
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stat-card .card-body {
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Book Cards */
+.book-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.book-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+}
+
+.book-cover {
+    width: 60px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.book-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+.book-author {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.book-price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #28a745;
+}
+
+.book-stock {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.stock-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.stock-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.stock-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* Order Cards */
+.order-card {
+    border-left: 4px solid #007bff;
+    border-radius: 6px;
+}
+
+.order-status {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-paid {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Search Panel */
+.search-panel {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.search-panel .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 0.75rem 1.25rem;
+}
+
+.search-panel .card-body {
+    padding: 1.25rem;
+}
+
+/* Quick Actions */
+.quick-action-btn {
+    border: 2px dashed #dee2e6;
+    background: white;
+    color: #6c757d;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-action-btn:hover {
+    border-color: #007bff;
+    color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.quick-action-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Table Styles */
+.dashboard-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.dashboard-table .table {
+    margin-bottom: 0;
+}
+
+.dashboard-table .table th {
+    border-top: none;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    padding: 1rem;
+}
+
+.dashboard-table .table td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+/* Badge Styles */
+.badge-outline {
+    background-color: transparent;
+    border: 1px solid;
+    font-weight: 500;
+}
+
+.badge-outline-primary {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.badge-outline-success {
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.badge-outline-warning {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .book-cover {
+        width: 50px;
+        height: 70px;
+    }
+}
