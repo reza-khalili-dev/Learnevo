@@ -12,6 +12,11 @@ from decimal import Decimal
 import json
 from .models import Book, BookCategory
 from orders.models import Order, OrderItem
+from .forms import BookForm, BookSearchForm, QuickOrderForm, BookReturnForm
+from .forms import BookCategoryForm, CategoryBulkActionForm
+from django.views.generic.edit import FormView
+from django.http import HttpResponseRedirect
+
 
 
 class BookListView(ListView):
@@ -35,13 +40,9 @@ class BookDetailView(DetailView):
 
 class BookCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Book
+    form_class = BookForm
     template_name = 'books/book_form.html'
-    fields = [
-        "title", "author", "description", "book_type", "category",
-        "price", "image", "file", "external_link", 
-        "stock", "min_stock_alert", "shipping_available", "status"
-    ]
-    success_url = reverse_lazy('books:book_list')
+    success_url = reverse_lazy('books:dashboard')
 
     def test_func(self):
         return self.request.user.role in ["manager", "employee"]
@@ -49,20 +50,26 @@ class BookCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def form_valid(self, form):
         form.instance.uploaded_by = self.request.user
         return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Add New Book'
+        return context
 
 
 class BookUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Book
+    form_class = BookForm
     template_name = 'books/book_form.html'
-    fields = [
-        "title", "author", "description", "book_type", "category",
-        "price", "image", "file", "external_link", 
-        "stock", "min_stock_alert", "shipping_available", "status"
-    ]
-    success_url = reverse_lazy('books:book_list')
+    success_url = reverse_lazy('books:dashboard')
 
     def test_func(self):
         return self.request.user.role in ["manager", "employee"]
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f'Edit Book: {self.object.title}'
+        return context
 
 
 class BookDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -137,53 +144,50 @@ class BookSearchView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     
     def get_queryset(self):
         queryset = Book.objects.select_related('category').all()
+        form = BookSearchForm(self.request.GET)
         
-        search_query = self.request.GET.get('q', '')
-        book_type = self.request.GET.get('book_type', '')
-        category_id = self.request.GET.get('category', '')
-        min_price = self.request.GET.get('min_price', '')
-        max_price = self.request.GET.get('max_price', '')
-        status = self.request.GET.get('status', '')
-        in_stock = self.request.GET.get('in_stock', '')
-        
-        if search_query:
-            queryset = queryset.filter(
-                Q(title__icontains=search_query) |
-                Q(author__icontains=search_query) |
-                Q(description__icontains=search_query)
-            )
-        
-        if book_type:
-            queryset = queryset.filter(book_type=book_type)
-        
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
-        
-        if min_price:
-            queryset = queryset.filter(price__gte=min_price)
-        
-        if max_price:
-            queryset = queryset.filter(price__lte=max_price)
-        
-        if status:
-            queryset = queryset.filter(status=status)
-        
-        if in_stock == 'yes':
-            queryset = queryset.filter(stock__gt=0)
-        elif in_stock == 'no':
-            queryset = queryset.filter(stock=0)
-        
-        sort_by = self.request.GET.get('sort_by', '-created_at')
-        if sort_by in ['title', 'author', 'price', 'stock', 'created_at', '-title', '-author', '-price', '-stock', '-created_at']:
-            queryset = queryset.order_by(sort_by)
+        if form.is_valid():
+            data = form.cleaned_data
+            
+            if data.get('q'):
+                search_query = data['q']
+                queryset = queryset.filter(
+                    Q(title__icontains=search_query) |
+                    Q(author__icontains=search_query) |
+                    Q(description__icontains=search_query)
+                )
+            
+            if data.get('book_type'):
+                queryset = queryset.filter(book_type=data['book_type'])
+            
+            if data.get('category'):
+                queryset = queryset.filter(category=data['category'])
+            
+            if data.get('min_price'):
+                queryset = queryset.filter(price__gte=data['min_price'])
+            
+            if data.get('max_price'):
+                queryset = queryset.filter(price__lte=data['max_price'])
+            
+            if data.get('status'):
+                queryset = queryset.filter(status=data['status'])
+            
+            if data.get('in_stock') == 'yes':
+                queryset = queryset.filter(stock__gt=0)
+            elif data.get('in_stock') == 'no':
+                queryset = queryset.filter(stock=0)
+            
+            if data.get('sort_by'):
+                queryset = queryset.order_by(data['sort_by'])
         
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['search_params'] = self.request.GET.dict()
+        context['search_form'] = BookSearchForm(self.request.GET)
+        context['title'] = 'Advanced Book Search'
         return context
-
+    
 
 class QuickOrderCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
     
@@ -269,3 +273,152 @@ class BookReturnView(LoginRequiredMixin, UserPassesTestMixin, View):
             
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
+        
+
+
+# category
+
+class CategoryListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+
+    model = BookCategory
+    template_name = 'books/category_list.html'
+    context_object_name = 'categories'
+    
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['bulk_action_form'] = CategoryBulkActionForm()
+        
+  
+        categories = context['categories']
+        
+        total_books_in_categories = 0
+        total_low_stock_books = 0
+        categories_with_books = 0
+        
+        for category in categories:
+            book_count = category.books.count()
+            category.book_count = book_count
+            category.active_books = category.books.filter(status='active').count()
+            low_stock = category.books.filter(
+                stock__gt=0, 
+                stock__lt=F('min_stock_alert')
+            ).count()
+            category.low_stock_books = low_stock
+            
+            total_books_in_categories += book_count
+            total_low_stock_books += low_stock
+            if book_count > 0:
+                categories_with_books += 1
+        
+        context.update({
+            'total_books_in_categories': total_books_in_categories,
+            'total_low_stock_books': total_low_stock_books,
+            'categories_with_books': categories_with_books,
+        })
+        
+        return context
+
+
+class CategoryCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = BookCategory
+    form_class = BookCategoryForm
+    template_name = 'books/category_form.html'
+    success_url = reverse_lazy('books:category_list')
+    
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Add New Category'
+        return context
+
+
+class CategoryUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = BookCategory
+    form_class = BookCategoryForm
+    template_name = 'books/category_form.html'
+    success_url = reverse_lazy('books:category_list')
+    
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f'Edit Category: {self.object.name}'
+        return context
+
+
+class CategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = BookCategory
+    template_name = 'books/category_confirm_delete.html'
+    success_url = reverse_lazy('books:category_list')
+    
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+    
+    def form_valid(self, form):
+        if self.object.books.exists():
+            messages.error(
+                self.request, 
+                f'Cannot delete category "{self.object.name}" because it has {self.object.books.count()} books. '
+                'Please reassign books to another category first.'
+            )
+            return HttpResponseRedirect(self.success_url)
+        return super().form_valid(form)
+
+
+class CategoryBulkActionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    form_class = CategoryBulkActionForm
+    template_name = 'books/category_bulk_action.html'
+    success_url = reverse_lazy('books:category_list')
+    
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+    
+    def form_valid(self, form):
+        category_ids = self.request.POST.getlist('category_ids')
+        action = form.cleaned_data['action']
+        target_category = form.cleaned_data['target_category']
+        
+        if not category_ids:
+            messages.error(self.request, 'No categories selected.')
+            return super().form_invalid(form)
+        
+        categories = BookCategory.objects.filter(id__in=category_ids)
+        
+        if action == 'delete':
+            deleted_count = 0
+            for category in categories:
+                if not category.books.exists():
+                    category.delete()
+                    deleted_count += 1
+                else:
+                    messages.warning(
+                        self.request,
+                        f'Category "{category.name}" not deleted because it has {category.books.count()} books.'
+                    )
+            
+            messages.success(self.request, f'Successfully deleted {deleted_count} categories.')
+        
+        elif action == 'merge':
+            if not target_category:
+                messages.error(self.request, 'Target category is required for merge action.')
+                return super().form_invalid(form)
+            
+            merged_count = 0
+            for category in categories:
+                if category.id != target_category.id:
+                    category.books.update(category=target_category)
+                    category.delete()
+                    merged_count += 1
+            
+            messages.success(
+                self.request, 
+                f'Successfully merged {merged_count} categories into "{target_category.name}".'
+            )
+        
+        return super().form_valid(form)

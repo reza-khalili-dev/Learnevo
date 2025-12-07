@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - LearnEvo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">{{ title }}</h3>
+                    <p class="text-muted mb-0">Manage book category details</p>
+                </div>
+                <div class="card-body">
+                    {% crispy form %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="alert alert-light border">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Tip:</strong> Categories help organize your books and make them easier to find.
+                            Use descriptive names and clear descriptions.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

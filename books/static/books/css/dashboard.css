@@ -169,12 +169,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-decoration: none !important;
 }
 
 .quick-action-btn:hover {
     border-color: #007bff;
     color: #007bff;
     background-color: #f8f9ff;
+    text-decoration: none !important;
 }
 
 .quick-action-icon {

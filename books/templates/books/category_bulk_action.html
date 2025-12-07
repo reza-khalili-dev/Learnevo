@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Bulk Category Actions - LearnEvo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0"><i class="fas fa-tasks me-2"></i>Bulk Category Actions</h3>
+                </div>
+                <div class="card-body">
+                    {% crispy form %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="alert alert-info">
+                        <small>
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> For merge action, all books from selected categories will be moved to the target category.
+                            For delete action, only empty categories (with no books) can be deleted.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

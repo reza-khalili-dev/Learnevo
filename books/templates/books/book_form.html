@@ -1,12 +1,69 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - LearnEvo{% endblock %}
+
 {% block content %}
-<h1>{% if book %}Edit{% else %}Add{% endif %} Book</h1>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">{{ title }}</h3>
+                    <p class="text-muted mb-0">Fill in the book details below</p>
+                </div>
+                <div class="card-body">
+                    {% crispy form %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="alert alert-light border">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Tip:</strong> Make sure to upload a cover image and set appropriate pricing.
+                            For physical books, don't forget to set the stock quantity.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-<form method="post" enctype="books/form_data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save</button>
-</form>
-
-<a href="{% url 'books:book_list' %}">Back to List</a>
+{% block extra_css %}
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: 10px 10px 0 0 !important;
+        padding: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #007bff;
+        border-bottom: 3px solid #007bff;
+        background-color: transparent;
+    }
+    
+    .tab-content {
+        padding-top: 1.5rem;
+    }
+</style>
 {% endblock %}

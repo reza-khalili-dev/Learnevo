@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Book Categories - LearnEvo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        height: 100%;
+    }
+    
+    .category-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+    }
+    
+    .category-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .category-stats {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .stat-badge {
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+        margin-right: 5px;
+    }
+    
+    .empty-categories {
+        padding: 3rem 1rem;
+        text-align: center;
+        color: #6c757d;
+    }
+    
+    .empty-categories-icon {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">📂 Book Categories</h1>
+                    <p class="text-muted mb-0">Organize your books into categories for better management</p>
+                </div>
+                <div>
+                    <a href="{% url 'books:category_add' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add New Category
+                    </a>
+                    <a href="{% url 'books:dashboard' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Panel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Bulk Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form id="bulkActionForm" method="post" action="{% url 'books:category_bulk_action' %}">
+                        {% csrf_token %}
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Select Categories:</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                        <label class="form-check-label" for="selectAll">
+                                            Select All Categories
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                {{ bulk_action_form.as_p }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Grid -->
+    <div class="row">
+        {% if categories %}
+            {% for category in categories %}
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+                <div class="category-card card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="category-name">{{ category.name }}</div>
+                            <div class="form-check">
+                                <input class="form-check-input category-checkbox" 
+                                       type="checkbox" 
+                                       name="category_ids" 
+                                       value="{{ category.id }}"
+                                       form="bulkActionForm">
+                            </div>
+                        </div>
+                        
+                        {% if category.description %}
+                        <p class="text-muted mb-3" style="font-size: 0.9rem;">
+                            {{ category.description|truncatechars:100 }}
+                        </p>
+                        {% endif %}
+                        
+                        <div class="category-stats mb-3">
+                            <span class="stat-badge bg-primary text-white">
+                                <i class="fas fa-book me-1"></i>{{ category.book_count }} Books
+                            </span>
+                            <span class="stat-badge bg-success text-white">
+                                <i class="fas fa-check-circle me-1"></i>{{ category.active_books }} Active
+                            </span>
+                            {% if category.low_stock_books > 0 %}
+                            <span class="stat-badge bg-warning text-dark">
+                                <i class="fas fa-exclamation-triangle me-1"></i>{{ category.low_stock_books }} Low Stock
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">
+                                Created: {{ category.created_at|date:"M d, Y" }}
+                            </small>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'books:book_search' %}?category={{ category.id }}" 
+                                   class="btn btn-outline-primary" 
+                                   data-bs-toggle="tooltip" title="View Books">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'books:category_edit' category.pk %}" 
+                                   class="btn btn-outline-secondary"
+                                   data-bs-toggle="tooltip" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'books:category_delete' category.pk %}" 
+                                   class="btn btn-outline-danger"
+                                   data-bs-toggle="tooltip" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="empty-categories">
+                <div class="empty-categories-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h5>No Categories Yet</h5>
+                <p class="mb-4">Create categories to organize your books better</p>
+                <a href="{% url 'books:category_add' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create Your First Category
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Summary Stats -->
+   <!-- Summary Stats -->
+    {% if categories %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Categories Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="h4 text-primary">{{ categories|length }}</div>
+                            <div class="text-muted">Total Categories</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="h4 text-success">
+                                {{ categories_with_books }}
+                            </div>
+                            <div class="text-muted">Categories with Books</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="h4 text-info">
+                                {{ total_books_in_categories }}
+                            </div>
+                            <div class="text-muted">Total Books in Categories</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="h4 text-warning">
+                                {{ total_low_stock_books }}
+                            </div>
+                            <div class="text-muted">Low Stock Books</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select All checkbox
+    const selectAll = document.getElementById('selectAll');
+    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            categoryCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock %}

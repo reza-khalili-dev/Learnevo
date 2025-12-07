@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Book Dashboard - LearnEvo{% endblock %}
+{% block title %}Book Dashboard - Learnevo{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'books/css/dashboard.css' %}">
@@ -213,6 +213,15 @@
                             <div class="fw-bold">Return Book</div>
                             <small class="text-muted">Process returns</small>
                         </div>
+                    </div>
+                    <div class="col-md-6 col-lg-12">
+                        <a href="{% url 'books:category_list' %}" class="quick-action-btn">
+                            <div class="quick-action-icon text-info">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="fw-bold">Manage Categories</div>
+                            <small class="text-muted">Organize books by category</small>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -484,7 +493,6 @@
                         <label for="customer_id" class="form-label">Customer (Optional)</label>
                         <select class="form-select" id="customer_id" name="customer_id">
                             <option value="">Select Customer</option>
-                            <!-- In a real app, you would populate this with actual users -->
                             <option value="{{ request.user.id }}">Current User ({{ request.user.email }})</option>
                         </select>
                         <small class="text-muted">Leave empty to use current user</small>
