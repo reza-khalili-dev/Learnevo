@@ -2,8 +2,11 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit, ButtonHolder, Div, Field, HTML
 from crispy_forms.bootstrap import Tab, TabHolder, Accordion, AccordionGroup
+from orders.models import Order
 from .models import Book, BookCategory
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class BookForm(forms.ModelForm):
     class Meta:
@@ -200,69 +203,6 @@ class BookSearchForm(forms.Form):
         )
 
 
-class QuickOrderForm(forms.Form):
-    book_id = forms.IntegerField(widget=forms.HiddenInput())
-    quantity = forms.IntegerField(
-        min_value=1,
-        initial=1,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
-    customer_id = forms.IntegerField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_method = 'post'
-        self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-form-label'
-        self.helper.field_class = 'mb-3'
-        
-        self.helper.layout = Layout(
-            'book_id',
-            'quantity',
-            'customer_id',
-        )
-
-
-class BookReturnForm(forms.Form):
-    order_item_id = forms.IntegerField(widget=forms.HiddenInput())
-    quantity = forms.IntegerField(
-        min_value=1,
-        initial=1,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
-    reason = forms.ChoiceField(
-        choices=[
-            ('damaged', 'Damaged Product'),
-            ('wrong_item', 'Wrong Item Shipped'),
-            ('customer_change_mind', 'Customer Changed Mind'),
-            ('defective', 'Defective Product'),
-            ('other', 'Other'),
-        ],
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    notes = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={'rows': 2, 'class': 'form-control', 'placeholder': 'Any additional notes...'})
-    )
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_method = 'post'
-        self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-form-label'
-        self.helper.field_class = 'mb-3'
-        
-        self.helper.layout = Layout(
-            'order_item_id',
-            'quantity',
-            'reason',
-            'notes',
-        )
 
 
 
@@ -326,3 +266,134 @@ class CategoryBulkActionForm(forms.Form):
                 css_class='d-flex justify-content-end mt-3'
             )
         )
+
+
+
+class QuickOrderForm(forms.Form):
+    book = forms.ModelChoiceField(
+        queryset=Book.objects.filter(book_type__in=["physical", "both"]),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'book-select'}),
+        label="Select Book"
+    )
+    
+    quantity = forms.IntegerField(
+        min_value=1,
+        initial=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'id': 'quantity-input',
+            'min': '1'
+        }),
+        label="Quantity"
+    )
+    
+    customer = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Customer (Optional)"
+    )
+    
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Any notes about this order...'
+        }),
+        label="Order Notes"
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        book = cleaned_data.get('book')
+        quantity = cleaned_data.get('quantity')
+        
+        if book and quantity:
+            if book.is_physical and book.stock < quantity:
+                raise forms.ValidationError(
+                    f'Only {book.stock} items available in stock for "{book.title}"'
+                )
+        
+        return cleaned_data
+
+
+class BookReturnForm(forms.Form):
+    order = forms.ModelChoiceField(
+        queryset=Order.objects.filter(status='completed'),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'order-select'}),
+        label="Select Order"
+    )
+    
+    book = forms.ModelChoiceField(
+        queryset=Book.objects.none(),  # Will be populated dynamically
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'book-select'}),
+        label="Select Book to Return"
+    )
+    
+    quantity = forms.IntegerField(
+        min_value=1,
+        initial=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'id': 'quantity-input',
+            'min': '1'
+        }),
+        label="Quantity to Return"
+    )
+    
+    reason = forms.ChoiceField(
+        choices=[
+            ('damaged', 'Damaged Product'),
+            ('wrong_item', 'Wrong Item Shipped'),
+            ('customer_change_mind', 'Customer Changed Mind'),
+            ('defective', 'Defective Product'),
+            ('other', 'Other'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Reason for Return"
+    )
+    
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Any additional notes about the return...'
+        }),
+        label="Return Notes"
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate books based on selected order
+        if 'order' in self.data:
+            try:
+                order_id = int(self.data.get('order'))
+                order = Order.objects.get(id=order_id)
+                self.fields['book'].queryset = order.books.all()
+            except (ValueError, Order.DoesNotExist):
+                pass
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        order = cleaned_data.get('order')
+        book = cleaned_data.get('book')
+        quantity = cleaned_data.get('quantity')
+        
+        if order and book and quantity:
+            # Check if book is in order
+            order_item = order.items.filter(book=book).first()
+            if not order_item:
+                raise forms.ValidationError(
+                    f'Book "{book.title}" is not in order #{order.id}'
+                )
+            
+            # Check if return quantity is valid
+            if quantity > order_item.quantity:
+                raise forms.ValidationError(
+                    f'Cannot return more than {order_item.quantity} items. '
+                    f'Only {order_item.quantity} were purchased in this order.'
+                )
+        
+        return cleaned_data

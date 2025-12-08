@@ -196,24 +196,29 @@
             
             <div class="col-lg-4 mb-4">
                 <div class="row g-3">
+                    <!-- Quick Order -->
                     <div class="col-md-6 col-lg-12">
-                        <div class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#quickOrderModal">
+                        <a href="{% url 'books:quick_order' %}" class="quick-action-btn">
                             <div class="quick-action-icon text-primary">
                                 <i class="fas fa-cart-plus"></i>
                             </div>
                             <div class="fw-bold">Quick Order</div>
                             <small class="text-muted">Create new order</small>
-                        </div>
+                        </a>
                     </div>
+                    
+                    <!-- Return Book -->
                     <div class="col-md-6 col-lg-12">
-                        <div class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#quickReturnModal">
+                        <a href="{% url 'books:return_book' %}" class="quick-action-btn">
                             <div class="quick-action-icon text-warning">
                                 <i class="fas fa-undo"></i>
                             </div>
                             <div class="fw-bold">Return Book</div>
                             <small class="text-muted">Process returns</small>
-                        </div>
+                        </a>
                     </div>
+                    
+                    <!-- Manage Categories -->
                     <div class="col-md-6 col-lg-12">
                         <a href="{% url 'books:category_list' %}" class="quick-action-btn">
                             <div class="quick-action-icon text-info">
@@ -221,6 +226,17 @@
                             </div>
                             <div class="fw-bold">Manage Categories</div>
                             <small class="text-muted">Organize books by category</small>
+                        </a>
+                    </div>
+                    
+                    <!-- Low Stock Alert -->
+                    <div class="col-md-6 col-lg-12">
+                        <a href="{% url 'books:book_search' %}?in_stock=yes&status=active&sort_by=stock" class="quick-action-btn">
+                            <div class="quick-action-icon text-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="fw-bold">Low Stock</div>
+                            <small class="text-muted">{{ low_stock_books }} books need attention</small>
                         </a>
                     </div>
                 </div>
@@ -297,14 +313,11 @@
                                                    data-bs-toggle="tooltip" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <button class="btn btn-outline-success quick-order-btn"
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#quickOrderModal"
-                                                        data-book-id="{{ book.id }}"
-                                                        data-book-title="{{ book.title }}"
-                                                        data-bs-toggle="tooltip" title="Quick Order">
+                                                <a href="{% url 'books:quick_order' %}?book={{ book.id }}" 
+                                                   class="btn btn-outline-success"
+                                                   data-bs-toggle="tooltip" title="Quick Order for this book">
                                                     <i class="fas fa-cart-plus"></i>
-                                                </button>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -420,32 +433,34 @@
                                         <td>{{ order.created_at|date:"M d, Y" }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
+                                                <!-- View Order -  -->
                                                 <a href="{% url 'orders:order_detail' order.pk %}" 
                                                    class="btn btn-outline-primary"
                                                    data-bs-toggle="tooltip" title="View Order">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                {% if order.status == "pending" %}
+                                                
+                                                <!-- Process Payment - -->
+                                                {% if order.status == "pending" and request.user.role in "manager employee" %}
                                                 <a href="{% url 'orders:order_pay' order.pk %}" 
                                                    class="btn btn-outline-success"
                                                    data-bs-toggle="tooltip" title="Process Payment">
                                                     <i class="fas fa-credit-card"></i>
                                                 </a>
                                                 {% endif %}
-                                                {% with order.items.all|first as first_item %}
-                                                {% if first_item.book.is_physical %}
-                                                <button class="btn btn-outline-warning quick-return-btn"
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#quickReturnModal"
-                                                        data-order-item-id="{{ first_item.id }}"
-                                                        data-order-id="{{ order.id }}"
-                                                        data-book-title="{{ first_item.book.title }}"
-                                                        data-max-quantity="{{ first_item.quantity }}"
-                                                        data-bs-toggle="tooltip" title="Return Item">
-                                                    <i class="fas fa-undo"></i>
-                                                </button>
+                                                
+                                                <!-- Return Item -  -->
+                                                {% if request.user.role in "manager employee" %}
+                                                    {% with order.items.all|first as first_item %}
+                                                        {% if first_item and first_item.book.is_physical %}
+                                                        <a href="{% url 'books:return_book' %}?order={{ order.id }}" 
+                                                           class="btn btn-outline-warning"
+                                                           data-bs-toggle="tooltip" title="Return Item">
+                                                            <i class="fas fa-undo"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                    {% endwith %}
                                                 {% endif %}
-                                                {% endwith %}
                                             </div>
                                         </td>
                                     </tr>
@@ -466,87 +481,64 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Quick Order Modal -->
-<div class="modal fade" id="quickOrderModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Quick Order</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        
+        <!-- Stock Status Summary -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Inventory Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3">
+                                        <span class="badge bg-success p-2">Good</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">Good Stock</div>
+                                        <div class="text-muted">Books with sufficient stock</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3">
+                                        <span class="badge bg-warning p-2">Low</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">Low Stock</div>
+                                        <div class="text-muted">Below minimum alert level</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3">
+                                        <span class="badge bg-danger p-2">Out</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">Out of Stock</div>
+                                        <div class="text-muted">No items available</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3">
+                                        <span class="badge bg-info p-2">Digital</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">Digital Books</div>
+                                        <div class="text-muted">No physical inventory</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <form id="quickOrderForm" action="{% url 'books:quick_order' %}" method="POST">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Book</label>
-                        <input type="text" class="form-control" id="modalBookTitle" readonly>
-                        <input type="hidden" name="book_id" id="book_id">
-                    </div>
-                    <div class="mb-3">
-                        <label for="quantity" class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1">
-                    </div>
-                    <div class="mb-3">
-                        <label for="customer_id" class="form-label">Customer (Optional)</label>
-                        <select class="form-select" id="customer_id" name="customer_id">
-                            <option value="">Select Customer</option>
-                            <option value="{{ request.user.id }}">Current User ({{ request.user.email }})</option>
-                        </select>
-                        <small class="text-muted">Leave empty to use current user</small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Order</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Return Modal -->
-<div class="modal fade" id="quickReturnModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="returnModalTitle">Return Book</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="quickReturnForm" action="{% url 'books:return_book' %}" method="POST">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" name="order_item_id" id="order_item_id">
-                    
-                    <div class="mb-3">
-                        <label for="return_quantity" class="form-label">Quantity to Return</label>
-                        <input type="number" class="form-control" id="return_quantity" name="quantity" value="1" min="1">
-                        <small class="text-muted">Enter the number of items being returned</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="reason" class="form-label">Reason for Return</label>
-                        <select class="form-select" id="reason" name="reason">
-                            <option value="damaged">Damaged Product</option>
-                            <option value="wrong_item">Wrong Item Shipped</option>
-                            <option value="customer_change_mind">Customer Changed Mind</option>
-                            <option value="defective">Defective Product</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Notes (Optional)</label>
-                        <textarea class="form-control" name="notes" rows="2" placeholder="Any additional notes..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">Process Return</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -554,4 +546,87 @@
 
 {% block extra_js %}
 <script src="{% static 'books/js/dashboard.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+    // Search Form Toggle
+    const searchToggleBtn = document.getElementById('searchToggleBtn')
+    const searchPanel = document.getElementById('searchPanel')
+    
+    if (searchToggleBtn && searchPanel) {
+        searchToggleBtn.addEventListener('click', function() {
+            searchPanel.classList.toggle('d-none')
+            const icon = this.querySelector('i')
+            if (searchPanel.classList.contains('d-none')) {
+                icon.className = 'fas fa-chevron-down'
+            } else {
+                icon.className = 'fas fa-chevron-up'
+            }
+        })
+    }
+
+    // Export to Excel Button
+    const exportBtn = document.getElementById('exportBtn')
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Exporting...'
+            this.disabled = true
+            
+            setTimeout(() => {
+                alert('Export feature would generate an Excel file. This is a demo.');
+                this.innerHTML = '<i class="fas fa-file-excel me-2"></i> Export to Excel'
+                this.disabled = false
+            }, 1500)
+        })
+    }
+    
+    // Price Range Validation
+    const minPriceInput = document.getElementById('min_price')
+    const maxPriceInput = document.getElementById('max_price')
+    
+    if (minPriceInput && maxPriceInput) {
+        const validatePriceRange = function() {
+            const min = parseFloat(minPriceInput.value)
+            const max = parseFloat(maxPriceInput.value)
+            
+            if (min && max && min > max) {
+                minPriceInput.classList.add('is-invalid')
+                maxPriceInput.classList.add('is-invalid')
+            } else {
+                minPriceInput.classList.remove('is-invalid')
+                maxPriceInput.classList.remove('is-invalid')
+            }
+        }
+        
+        minPriceInput.addEventListener('change', validatePriceRange)
+        maxPriceInput.addEventListener('change', validatePriceRange)
+    }
+});
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div')
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`
+    alertDiv.role = 'alert'
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `
+    
+    const container = document.querySelector('.container-fluid')
+    if (container) {
+        container.insertBefore(alertDiv, container.firstChild)
+        
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv)
+            }
+        }, 5000)
+    }
+}
+</script>
 {% endblock %}

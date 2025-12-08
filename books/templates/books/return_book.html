@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Return Book - Learnevo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-undo me-2"></i>Return Book
+                        </h4>
+                        <a href="{% url 'books:dashboard' %}" class="btn btn-dark btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" id="returnForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.order|as_crispy_field }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.book|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.quantity|as_crispy_field }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.reason|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.notes|as_crispy_field }}
+                        </div>
+                        
+                        <!-- Order Information -->
+                        <div class="card mb-4" id="orderInfoCard" style="display: none;">
+                            <div class="card-header">
+                                <h6 class="mb-0">Order Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Order ID:</strong> <span id="orderId">-</span></p>
+                                        <p><strong>Customer:</strong> <span id="orderCustomer">-</span></p>
+                                        <p><strong>Order Date:</strong> <span id="orderDate">-</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Order Status:</strong> <span id="orderStatus">-</span></p>
+                                        <p><strong>Total Amount:</strong> <span id="orderTotal">-</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Book Information -->
+                        <div class="card mb-4" id="bookInfoCard" style="display: none;">
+                            <div class="card-header">
+                                <h6 class="mb-0">Book Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <img id="bookImage" src="" alt="" class="img-fluid rounded" style="max-height: 150px;">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th width="120">Title:</th>
+                                                <td id="bookTitle">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Author:</th>
+                                                <td id="bookAuthor">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Price:</th>
+                                                <td id="bookPrice">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Current Stock:</th>
+                                                <td id="bookStock">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Purchased Qty:</th>
+                                                <td id="purchasedQty">-</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Return Summary -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Return Summary</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Book Price:</strong> <span id="returnUnitPrice">$0.00</span></p>
+                                        <p><strong>Return Quantity:</strong> <span id="returnQuantity">1</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Refund Amount:</strong> <span id="refundAmount" class="text-success">$0.00</span></p>
+                                        <p><strong>New Stock After Return:</strong> <span id="newStock">0</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'books:dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-check me-2"></i>Process Return
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderSelect = document.getElementById('order-select');
+    const bookSelect = document.getElementById('book-select');
+    const quantityInput = document.getElementById('quantity-input');
+    
+    // Fetch books when order changes
+    orderSelect.addEventListener('change', function() {
+        const orderId = this.value;
+        
+        if (!orderId) {
+            bookSelect.innerHTML = '<option value="">Select Book</option>';
+            document.getElementById('orderInfoCard').style.display = 'none';
+            return;
+        }
+        
+        // Fetch order details and books
+        fetch(`/books/api/order-books/${orderId}/`)
+            .then(response => response.json())
+            .then(data => {
+                // Update book select options
+                let options = '<option value="">Select Book</option>';
+                data.books.forEach(book => {
+                    options += `<option value="${book.id}" data-max="${book.max_return}">${book.title} (Purchased: ${book.quantity})</option>`;
+                });
+                bookSelect.innerHTML = options;
+                
+                // Show order info
+                if (data.order) {
+                    document.getElementById('orderId').textContent = data.order.id;
+                    document.getElementById('orderCustomer').textContent = data.order.customer;
+                    document.getElementById('orderDate').textContent = data.order.date;
+                    document.getElementById('orderStatus').textContent = data.order.status;
+                    document.getElementById('orderTotal').textContent = data.order.total;
+                    document.getElementById('orderInfoCard').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching order books:', error);
+            });
+    });
+    
+    // Fetch book details when book selection changes
+    bookSelect.addEventListener('change', function() {
+        const bookId = this.value;
+        const selectedOption = this.options[this.selectedIndex];
+        const maxReturn = selectedOption.getAttribute('data-max') || 1;
+        
+        if (!bookId) {
+            document.getElementById('bookInfoCard').style.display = 'none';
+            return;
+        }
+        
+        // Set max quantity
+        quantityInput.max = maxReturn;
+        
+        // Fetch book details
+        fetch(`/books/api/book-details/${bookId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const book = data.book;
+                    
+                    // Update book info
+                    document.getElementById('bookTitle').textContent = book.title;
+                    document.getElementById('bookAuthor').textContent = book.author;
+                    document.getElementById('bookPrice').textContent = `$${book.price}`;
+                    document.getElementById('bookStock').textContent = book.stock;
+                    document.getElementById('purchasedQty').textContent = maxReturn;
+                    
+                    if (book.image) {
+                        document.getElementById('bookImage').src = book.image;
+                        document.getElementById('bookImage').style.display = 'block';
+                    } else {
+                        document.getElementById('bookImage').style.display = 'none';
+                    }
+                    
+                    document.getElementById('bookInfoCard').style.display = 'block';
+                    
+                    // Update return summary
+                    updateReturnSummary(book.price, book.stock);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching book details:', error);
+            });
+    });
+    
+    // Update return summary when quantity changes
+    quantityInput.addEventListener('input', function() {
+        const bookId = bookSelect.value;
+        if (!bookId) return;
+        
+        // Fetch price again
+        fetch(`/books/api/book-details/${bookId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateReturnSummary(data.book.price, data.book.stock);
+                }
+            });
+    });
+    
+    function updateReturnSummary(unitPrice, currentStock) {
+        const quantity = parseInt(quantityInput.value) || 1;
+        const maxQuantity = parseInt(quantityInput.max) || 1;
+        
+        // Validate quantity
+        if (quantity > maxQuantity) {
+            quantityInput.value = maxQuantity;
+            alert(`Maximum return quantity is ${maxQuantity}`);
+            return;
+        }
+        
+        // Update displayed values
+        document.getElementById('returnQuantity').textContent = quantity;
+        document.getElementById('returnUnitPrice').textContent = `$${unitPrice}`;
+        
+        // Calculate refund
+        const refundAmount = unitPrice * quantity;
+        const newStock = parseInt(currentStock) + quantity;
+        
+        document.getElementById('refundAmount').textContent = `$${refundAmount.toFixed(2)}`;
+        document.getElementById('newStock').textContent = newStock;
+    }
+    
+    // Form validation
+    document.getElementById('returnForm').addEventListener('submit', function(e) {
+        const orderId = orderSelect.value;
+        const bookId = bookSelect.value;
+        const quantity = parseInt(quantityInput.value) || 0;
+        
+        if (!orderId) {
+            e.preventDefault();
+            alert('Please select an order');
+            return false;
+        }
+        
+        if (!bookId) {
+            e.preventDefault();
+            alert('Please select a book');
+            return false;
+        }
+        
+        if (quantity < 1) {
+            e.preventDefault();
+            alert('Return quantity must be at least 1');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

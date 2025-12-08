@@ -1,21 +1,22 @@
+import json
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.db.models import Sum, Count, Q, F, DecimalField
 from django.db.models.functions import Coalesce
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from decimal import Decimal
-import json
 from .models import Book, BookCategory
 from orders.models import Order, OrderItem
 from .forms import BookForm, BookSearchForm, QuickOrderForm, BookReturnForm
 from .forms import BookCategoryForm, CategoryBulkActionForm
 from django.views.generic.edit import FormView
 from django.http import HttpResponseRedirect
+
 
 
 
@@ -189,91 +190,200 @@ class BookSearchView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
     
 
-class QuickOrderCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
+
+
+class QuickOrderView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = 'books/quick_order.html'
     
     def test_func(self):
         return self.request.user.role in ["manager", "employee"]
     
-    def post(self, request):
-        try:
-            data = json.loads(request.body)
-            book_id = data.get('book_id')
-            quantity = int(data.get('quantity', 1))
-            customer_id = data.get('customer_id')
-            
-            if not book_id:
-                return JsonResponse({'success': False, 'error': 'Book ID is required'})
-            
-            book = get_object_or_404(Book, id=book_id)
-            
-            if book.is_physical and book.stock < quantity:
-                return JsonResponse({
-                    'success': False, 
-                    'error': f'Only {book.stock} items available in stock'
-                })
-            
-            order = Order.objects.create(
-                user_id=customer_id or request.user.id,
-                status="pending"
-            )
-            
-            OrderItem.objects.create(
-                order=order,
-                book=book,
-                quantity=quantity,
-                unit_price=book.price
-            )
-            
-            order.update_total()
-            
-            if book.is_physical:
-                book.stock -= quantity
-                book.save()
-            
-            return JsonResponse({
-                'success': True,
-                'order_id': order.id,
-                'message': f'Order created successfully. Total: ${order.total}'
-            })
-            
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-
-class BookReturnView(LoginRequiredMixin, UserPassesTestMixin, View):
-    
-    def test_func(self):
-        return self.request.user.role in ["manager", "employee"]
-    
-    def post(self, request):
-        try:
-            data = json.loads(request.body)
-            order_item_id = data.get('order_item_id')
-            return_quantity = int(data.get('quantity', 1))
-            reason = data.get('reason', '')
-            
-            order_item = get_object_or_404(OrderItem, id=order_item_id)
-            
-            if return_quantity > order_item.quantity:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Cannot return more than {order_item.quantity} items'
-                })
-            
-            
-            if order_item.book.is_physical:
-                order_item.book.stock += return_quantity
-                order_item.book.save()
-            
-            return JsonResponse({
-                'success': True,
-                'message': f'{return_quantity} items returned successfully. Stock updated.',
-                'new_stock': order_item.book.stock
-            })
-            
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+    def get(self, request):
+        form = QuickOrderForm()
         
+        book_id = request.GET.get('book')
+        if book_id:
+            try:
+                book = Book.objects.get(id=book_id)
+                form.fields['book'].initial = book
+            except (Book.DoesNotExist, ValueError):
+                pass
+        
+        form.fields['customer'].initial = request.user
+        
+        return render(request, self.template_name, {'form': form})
+    
+    def post(self, request):
+        form = QuickOrderForm(request.POST)
+        
+        if form.is_valid():
+            try:
+                book = form.cleaned_data['book']
+                quantity = form.cleaned_data['quantity']
+                customer = form.cleaned_data['customer'] or request.user
+                notes = form.cleaned_data.get('notes', '')
+                
+                if book.is_physical and book.stock < quantity:
+                    messages.error(
+                        request,
+                        f'Only {book.stock} items available for "{book.title}".'
+                    )
+                    return render(request, self.template_name, {'form': form})
+                
+                order = Order.objects.create(
+                    user=customer,
+                    status="pending",
+                    notes=f"Quick Order: {notes}" if notes else "Quick Order"
+                )
+                
+                OrderItem.objects.create(
+                    order=order,
+                    book=book,
+                    quantity=quantity,
+                    unit_price=book.price
+                )
+                
+                order.update_total()
+                
+                if book.is_physical:
+                    book.stock -= quantity
+                    book.save()
+                
+                messages.success(
+                    request,
+                    f'✅ Order #{order.id} created for {customer.email}!'
+                )
+                
+                return redirect('books:dashboard')
+                
+            except Exception as e:
+                messages.error(request, f'❌ Error: {str(e)}')
+        
+        return render(request, self.template_name, {'form': form})
+    
+    
+    
+    
+    
+class BookReturnView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = 'books/return_book.html'
+    
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+    
+    def get(self, request):
+        form = BookReturnForm()
+        
+        order_id = request.GET.get('order')
+        if order_id:
+            try:
+                order = Order.objects.get(id=order_id)
+                form.fields['order'].initial = order
+                
+                if order.items.count() == 1:
+                    book = order.items.first().book
+                    form.fields['book'].queryset = Book.objects.filter(id=book.id)
+                    form.fields['book'].initial = book
+                    
+                    max_quantity = order.items.first().quantity
+                    form.fields['quantity'].widget.attrs['max'] = max_quantity
+                    
+            except (Order.DoesNotExist, ValueError):
+                messages.warning(request, 'Order not found or invalid order ID')
+        
+        context = {
+            'form': form,
+            'selected_order_id': order_id
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request):
+        form = BookReturnForm(request.POST)
+        
+        if form.is_valid():
+            try:
+                order = form.cleaned_data['order']
+                book = form.cleaned_data['book']
+                quantity = form.cleaned_data['quantity']
+                reason = form.cleaned_data['reason']
+                notes = form.cleaned_data.get('notes', '')
+                
+                order_item = order.items.filter(book=book).first()
+                if not order_item:
+                    messages.error(request, f'Book "{book.title}" not found in order #{order.id}')
+                    return render(request, self.template_name, {'form': form})
+                
+                if quantity > order_item.quantity:
+                    messages.error(
+                        request,
+                        f'Cannot return {quantity} items. Only {order_item.quantity} purchased.'
+                    )
+                    return render(request, self.template_name, {'form': form})
+                
+                if book.is_physical:
+                    book.stock += quantity
+                    book.save()
+                
+                order_item.quantity -= quantity
+                if order_item.quantity <= 0:
+                    order_item.delete()
+                else:
+                    order_item.save()
+                
+                order.update_total()
+                
+                messages.success(
+                    request,
+                    f'✅ Return processed successfully!\n'
+                    f'• Order: #{order.id}\n'
+                    f'• Book: {book.title}\n'
+                    f'• Returned: {quantity} items\n'
+                    f'• Reason: {reason}\n'
+                    f'• New Stock: {book.stock}'
+                )
+                
+                return redirect('books:dashboard')
+                
+            except Exception as e:
+                messages.error(request, f'❌ Error processing return: {str(e)}')
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'Book return error: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+        
+        return render(request, self.template_name, {'form': form})
+
+
+
+class GetOrderBooksView(LoginRequiredMixin, UserPassesTestMixin, View):
+    
+    def test_func(self):
+        return self.request.user.role in ["manager", "employee"]
+    
+    def get(self, request):
+        order_id = request.GET.get('order_id')
+        
+        if not order_id:
+            return JsonResponse({'books': []})
+        
+        try:
+            order = Order.objects.get(id=order_id)
+            books = []
+            
+            for item in order.items.all():
+                books.append({
+                    'id': item.book.id,
+                    'title': item.book.title,
+                    'quantity': item.quantity,
+                    'max_return': item.quantity
+                })
+            
+            return JsonResponse({'books': books})
+        except Order.DoesNotExist:
+            return JsonResponse({'books': []})
 
 
 # category

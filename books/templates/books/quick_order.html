@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Quick Order - Learnevo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-cart-plus me-2"></i>Quick Order
+                        </h4>
+                        <a href="{% url 'books:dashboard' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" id="quickOrderForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.book|as_crispy_field }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.quantity|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.customer|as_crispy_field }}
+                            </div>
+                            
+                            <!-- حذف فیلد reason که وجود ندارد -->
+                            <div class="col-md-6 mb-3">
+                                <!-- اگر فیلد دیگری می‌خواهید اینجا قرار دهید -->
+                                <div class="mb-3">
+                                    <label class="form-label">Order Type</label>
+                                    <select class="form-select" name="order_type">
+                                        <option value="regular">Regular Order</option>
+                                        <option value="urgent">Urgent Order</option>
+                                        <option value="bulk">Bulk Order</option>
+                                    </select>
+                                    <small class="text-muted">Select order priority</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.notes|as_crispy_field }}
+                        </div>
+                        
+                        <!-- Book Information -->
+                        <div class="card mb-4" id="bookInfoCard" style="display: none;">
+                            <div class="card-header">
+                                <h6 class="mb-0">Book Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <img id="bookImage" src="" alt="" class="img-fluid rounded" style="max-height: 200px;">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th width="120">Title:</th>
+                                                <td id="bookTitle">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Author:</th>
+                                                <td id="bookAuthor">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Price:</th>
+                                                <td id="bookPrice">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Stock:</th>
+                                                <td id="bookStock">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Type:</th>
+                                                <td id="bookType">-</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Summary -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Order Summary</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Unit Price:</strong> <span id="unitPrice">$0.00</span></p>
+                                        <p><strong>Quantity:</strong> <span id="summaryQuantity">1</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Subtotal:</strong> <span id="subtotal">$0.00</span></p>
+                                        <p><strong>Tax (10%):</strong> <span id="tax">$0.00</span></p>
+                                        <h5 class="mt-3">Total: <span id="total" class="text-primary">$0.00</span></h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'books:dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-2"></i>Create Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bookSelect = document.getElementById('id_book');  // تغییر ID
+    const quantityInput = document.getElementById('id_quantity');  // تغییر ID
+    
+    // اگر کتاب از URL انتخاب شده باشد
+    const selectedBookId = "{{ selected_book_id|default:'' }}";
+    
+    if (selectedBookId && bookSelect) {
+        // کتاب انتخاب شده را highlight کنیم
+        setTimeout(() => {
+            if (bookSelect.value) {
+                fetchBookDetails(bookSelect.value);
+            }
+        }, 500);
+    }
+    
+    // وقتی کتاب تغییر کرد
+    if (bookSelect) {
+        bookSelect.addEventListener('change', function() {
+            if (this.value) {
+                fetchBookDetails(this.value);
+            } else {
+                document.getElementById('bookInfoCard').style.display = 'none';
+            }
+        });
+    }
+    
+    // گرفتن اطلاعات کتاب
+    function fetchBookDetails(bookId) {
+        // در حالت واقعی باید API endpoint داشته باشید
+        // برای حالا فقط اطلاعات را از option بگیریم
+        const selectedOption = bookSelect.options[bookSelect.selectedIndex];
+        const bookTitle = selectedOption.text.split(' - ')[0];
+        
+        // نمایش اطلاعات ساده
+        document.getElementById('bookTitle').textContent = bookTitle;
+        document.getElementById('bookInfoCard').style.display = 'block';
+        
+        // برای اطلاعات بیشتر، می‌توانید API بسازید
+        /*
+        fetch(`/books/api/book-details/${bookId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const book = data.book;
+                    updateBookInfo(book);
+                    updateOrderSummary(book.price);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        */
+    }
+    
+    function updateBookInfo(book) {
+        document.getElementById('bookTitle').textContent = book.title;
+        document.getElementById('bookAuthor').textContent = book.author;
+        document.getElementById('bookPrice').textContent = `$${book.price}`;
+        document.getElementById('bookStock').textContent = book.stock;
+        document.getElementById('bookType').textContent = book.book_type;
+        
+        if (book.image) {
+            document.getElementById('bookImage').src = book.image;
+            document.getElementById('bookImage').style.display = 'block';
+        } else {
+            document.getElementById('bookImage').style.display = 'none';
+        }
+        
+        document.getElementById('bookInfoCard').style.display = 'block';
+        updateOrderSummary(book.price);
+    }
+    
+    // Update order summary when quantity changes
+    if (quantityInput) {
+        quantityInput.addEventListener('input', function() {
+            const bookId = bookSelect ? bookSelect.value : null;
+            if (!bookId) return;
+            
+            // فرض کنیم قیمت کتاب 10 دلار است (در حالت واقعی باید از API بگیرید)
+            const unitPrice = 10.00; // جایگزین با قیمت واقعی
+            updateOrderSummary(unitPrice);
+        });
+    }
+    
+    function updateOrderSummary(unitPrice) {
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+        
+        // Update displayed values
+        document.getElementById('summaryQuantity').textContent = quantity;
+        document.getElementById('unitPrice').textContent = `$${unitPrice.toFixed(2)}`;
+        
+        // Calculate totals
+        const subtotal = unitPrice * quantity;
+        const tax = subtotal * 0.10; // 10% tax
+        const total = subtotal + tax;
+        
+        document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+        document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+    }
+    
+    // Form validation
+    const quickOrderForm = document.getElementById('quickOrderForm');
+    if (quickOrderForm) {
+        quickOrderForm.addEventListener('submit', function(e) {
+            const bookId = bookSelect ? bookSelect.value : null;
+            const quantity = quantityInput ? parseInt(quantityInput.value) || 0 : 0;
+            
+            if (!bookId) {
+                e.preventDefault();
+                alert('Please select a book');
+                return false;
+            }
+            
+            if (quantity < 1) {
+                e.preventDefault();
+                alert('Quantity must be at least 1');
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

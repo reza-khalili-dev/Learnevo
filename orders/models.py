@@ -2,8 +2,6 @@ from decimal import Decimal
 from django.db import models
 from django.conf import settings
 
-# Create your models here.
-
 class Order(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
@@ -12,10 +10,22 @@ class Order(models.Model):
         ("refunded", "Refunded"),
     ]
     
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="orders")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    # اضافه کردن این فیلد مهم
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_orders",
+        verbose_name="Created By",
+        help_text="Staff member who created this order"
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,9 +45,8 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    
-    order = models.ForeignKey(Order,on_delete=models.CASCADE,related_name="items")
-    book = models.ForeignKey("books.Book",on_delete=models.PROTECT,related_name="order_items")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    book = models.ForeignKey("books.Book", on_delete=models.PROTECT, related_name="order_items")
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -52,4 +61,3 @@ class OrderItem(models.Model):
     
     def __str__(self):
         return f"{self.book.title} x{self.quantity} (Order #{self.order.id})"
-        
