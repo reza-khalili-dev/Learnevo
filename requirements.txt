@@ -9,4 +9,4 @@ python-dotenv>=1.0.0
 gunicorn>=21.0.0
 django-crispy-forms>=2.0
 crispy-bootstrap5>=0.7
-xhtml2pdf>=0.2.17
+xhtml2pdf>=0.2.17`
