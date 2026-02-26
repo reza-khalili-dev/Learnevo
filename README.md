@@ -28,7 +28,7 @@ It provides a platform to manage courses, students, instructors, assignments, an
 ## 🚀 Getting Started
 ```bash
 # Clone the repository
-git clone https://github.com/<reza-khalili-dev>/learnevo.git
+git clone https://github.com/reza-khalili-dev/Learnevo.git
 cd learnevo
 
 # Create and activate virtualenv
