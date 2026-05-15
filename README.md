@@ -25,6 +25,13 @@ It provides a platform to manage courses, students, instructors, assignments, an
 
 ---
 
+## 📞 Need a Custom Solution?
+
+I'm available for freelance projects. Contact me:
+
+- 🌐 Website: [reza-khalili.ir](https://reza-khalili.ir)
+- 📧 Email: reza@reza-khalili.ir
+
 ## 🚀 Getting Started
 ```bash
 # Clone the repository
@@ -43,3 +50,6 @@ python manage.py migrate
 
 # Run the development server
 python manage.py runserver
+
+
+
